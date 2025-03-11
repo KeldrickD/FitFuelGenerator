@@ -14,13 +14,13 @@
                         </div>
                         <div class="achievement-level">
                             {% if client.points >= 1000 %}
-                            <span class="badge bg-warning">Elite</span>
+                                <span class="badge bg-warning">Elite</span>
                             {% elif client.points >= 500 %}
-                            <span class="badge bg-info">Pro</span>
+                                <span class="badge bg-info">Pro</span>
                             {% elif client.points >= 100 %}
-                            <span class="badge bg-success">Active</span>
+                                <span class="badge bg-success">Active</span>
                             {% else %}
-                            <span class="badge bg-secondary">Beginner</span>
+                                <span class="badge bg-secondary">Beginner</span>
                             {% endif %}
                         </div>
                     </div>
@@ -37,27 +37,20 @@
                 <div class="card-header">
                     <h3 class="card-title">
                         {% if category == 'workout' %}
-                        <i data-feather="activity" class="me-2"></i>Workout Achievements
+                            <i data-feather="activity" class="me-2"></i>Workout Achievements
                         {% elif category == 'nutrition' %}
-                        <i data-feather="coffee" class="me-2"></i>Nutrition Achievements
+                            <i data-feather="coffee" class="me-2"></i>Nutrition Achievements
                         {% else %}
-                        <i data-feather="target" class="me-2"></i>Goal Achievements
+                            <i data-feather="target" class="me-2"></i>Goal Achievements
                         {% endif %}
                     </h3>
                 </div>
                 <div class="card-body">
-                    {% for achievement in achievements if achievement.type.startswith(category) %}
+                    {% for achievement in achievements if achievement.type == category %}
                     <div class="achievement-item mb-4">
                         <div class="d-flex align-items-center mb-2">
-                            <div class="achievement-icon me-3">
-                                <i data-feather="{{ achievement.icon }}" 
-                                   class="{% if progress_map.get(achievement.id, {}).get('completed') %}
-                                          text-success
-                                          {% elif progress_map.get(achievement.id, {}).get('progress', 0) > 0 %}
-                                          text-warning
-                                          {% else %}
-                                          text-secondary
-                                          {% endif %}"></i>
+                            <div class="achievement-icon me-3 {% if progress_map.get(achievement.id, {}).get('completed') %}completed{% endif %}">
+                                <i data-feather="{{ achievement.icon }}" class="{% if progress_map.get(achievement.id, {}).get('completed') %}text-success{% else %}text-secondary{% endif %}"></i>
                             </div>
                             <div class="flex-grow-1">
                                 <h5 class="mb-0">{{ achievement.name }}</h5>
@@ -65,33 +58,31 @@
                             </div>
                             <div class="ms-3">
                                 {% if progress_map.get(achievement.id, {}).get('completed') %}
-                                <span class="badge bg-success">
-                                    <i data-feather="check" class="feather-small"></i>
-                                </span>
+                                    <span class="badge bg-success">
+                                        <i data-feather="check" class="feather-small"></i>
+                                    </span>
                                 {% endif %}
                             </div>
                         </div>
                         <div class="progress" style="height: 5px;">
-                            <div class="progress-bar {% if progress_map.get(achievement.id, {}).get('completed') %}
-                                                    bg-success
-                                                    {% else %}
-                                                    bg-primary
-                                                    {% endif %}"
+                            <div class="progress-bar {% if progress_map.get(achievement.id, {}).get('completed') %}bg-success{% else %}bg-primary{% endif %}"
                                  role="progressbar"
                                  style="width: {{ progress_map.get(achievement.id, {}).get('progress', 0) }}%"
                                  aria-valuenow="{{ progress_map.get(achievement.id, {}).get('progress', 0) }}"
                                  aria-valuemin="0"
-                                 aria-valuemax="100"></div>
+                                 aria-valuemax="100">
+                            </div>
                         </div>
                         {% if progress_map.get(achievement.id, {}).get('completed') %}
-                        <small class="text-muted">
-                            Earned {{ progress_map[achievement.id]['earned_at'].strftime('%Y-%m-%d') }}
-                        </small>
+                            <small class="text-muted">Earned {{ progress_map[achievement.id]['earned_at'].strftime('%Y-%m-%d') }}</small>
                         {% else %}
-                        <small class="text-muted">
-                            {{ progress_map.get(achievement.id, {}).get('progress', 0)|round|int }}% Complete
-                        </small>
+                            <small class="text-muted">{{ progress_map.get(achievement.id, {}).get('progress', 0)|round|int }}% Complete</small>
                         {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i data-feather="award" class="mb-3 text-muted" style="width: 48px; height: 48px; opacity: 0.5;"></i>
+                        <p class="text-muted mb-0">No achievements available in this category yet.</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -110,6 +101,11 @@
     justify-content: center;
     border-radius: 50%;
     background-color: var(--bs-secondary-bg);
+    transition: all 0.3s ease;
+}
+
+.achievement-icon.completed {
+    background-color: rgba(var(--bs-success-rgb), 0.1);
 }
 
 .achievement-icon i {

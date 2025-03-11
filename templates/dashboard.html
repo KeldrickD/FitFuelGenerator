@@ -195,8 +195,8 @@
 
 {% block scripts %}
 <script>
+// Initialize edit client modal
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize edit client modal
     const editClientModal = document.getElementById('editClientModal');
     if (editClientModal) {
         editClientModal.addEventListener('show.bs.modal', function(event) {

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FitFuel - Power Client Wins</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
 </head>
@@ -13,7 +13,7 @@
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
-                <svg class="me-2" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <svg class="me-2" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path d="M6 4h12l3 4-9 13L3 8z" stroke-width="2"/>
                     <path d="M12 21V8" stroke-width="2"/>
                     <path d="M9 8l3-4 3 4" stroke-width="2"/>
@@ -26,10 +26,14 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i data-feather="home" class="me-2"></i>Home
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('create_plan') }}">Create Plan</a>
+                        <a class="nav-link" href="{{ url_for('create_plan') }}">
+                            <i data-feather="plus-circle" class="me-2"></i>Create Plan
+                        </a>
                     </li>
                 </ul>
             </div>
@@ -40,7 +44,7 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    <div class="alert alert-{{ category }} alert-dismissible fade show rounded-xl shadow-soft">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
@@ -53,7 +57,16 @@
 
     <footer class="footer">
         <div class="container text-center">
-            <span class="text-muted">© 2024 FitFuel. Power Client Wins with Workouts + Meals</span>
+            <div class="row">
+                <div class="col-md-12">
+                    <svg class="mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" opacity="0.5">
+                        <path d="M6 4h12l3 4-9 13L3 8z" stroke-width="2"/>
+                        <path d="M12 21V8" stroke-width="2"/>
+                        <path d="M9 8l3-4 3 4" stroke-width="2"/>
+                    </svg>
+                    <p class="text-muted mb-0">© 2024 FitFuel. Power Client Wins with Workouts + Meals</p>
+                </div>
+            </div>
         </div>
     </footer>
 

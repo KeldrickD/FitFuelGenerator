@@ -1,49 +1,115 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="px-4 py-5 my-5 text-center">
-    <i data-feather="activity" class="display-1 mb-4"></i>
-    <h1 class="display-5 fw-bold">FitFuel</h1>
+<div class="hero-section px-4 py-5 my-5 text-center">
+    <div class="animated-logo mb-5">
+        <svg class="flame-logo" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 4h12l3 4-9 13L3 8z" class="flame-path"/>
+            <path d="M12 21V8" class="flame-path"/>
+            <path d="M9 8l3-4 3 4" class="flame-path"/>
+        </svg>
+    </div>
+    <h1 class="display-3 fw-bold mb-4 gradient-text">FitFuel</h1>
     <div class="col-lg-6 mx-auto">
-        <p class="lead mb-4">
-            Power client wins with AI-generated workout and meal plans.
-            Create custom plans tailored to goals, fitness levels, and budgets in minutes.
+        <p class="lead mb-4 text-light">
+            Empower your clients with AI-driven workout and meal plans. 
+            Create professional, personalized fitness journeys in minutes.
         </p>
-        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-            <a href="{{ url_for('create_plan') }}" class="btn btn-primary btn-lg px-4 gap-3">
-                Create New Plan
+        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center mb-5">
+            <a href="{{ url_for('create_plan') }}" class="btn btn-primary btn-lg px-5 gap-3">
+                <i data-feather="plus-circle" class="me-2"></i>Create New Plan
             </a>
         </div>
     </div>
 </div>
 
-<div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
-    <div class="col d-flex align-items-start">
-        <div class="text-body-emphasis d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
-            <i data-feather="trending-up"></i>
+<div class="features-section py-5">
+    <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-4">
+                        <i data-feather="trending-up" class="text-primary"></i>
+                    </div>
+                    <h3 class="fs-2 mb-3">Smart Progression</h3>
+                    <p class="mb-0">Adaptive workout plans that evolve with your clients' progress, ensuring continuous growth and engagement.</p>
+                </div>
+            </div>
         </div>
-        <div>
-            <h3 class="fs-2">Progression Booster</h3>
-            <p>Workouts that evolve weekly to keep clients advancing towards their goals.</p>
+
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-4">
+                        <i data-feather="dollar-sign" class="text-primary"></i>
+                    </div>
+                    <h3 class="fs-2 mb-3">Budget Optimization</h3>
+                    <p class="mb-0">Cost-effective meal plans that maintain nutritional excellence while respecting client budgets.</p>
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="col d-flex align-items-start">
-        <div class="text-body-emphasis d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
-            <i data-feather="dollar-sign"></i>
-        </div>
-        <div>
-            <h3 class="fs-2">Budget Smart</h3>
-            <p>Meal plans that respect budgets while maintaining nutritional goals.</p>
-        </div>
-    </div>
-    <div class="col d-flex align-items-start">
-        <div class="text-body-emphasis d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
-            <i data-feather="refresh-cw"></i>
-        </div>
-        <div>
-            <h3 class="fs-2">Quick Substitutions</h3>
-            <p>Instant meal and exercise alternatives to keep plans flexible.</p>
+
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-4">
+                        <i data-feather="refresh-cw" class="text-primary"></i>
+                    </div>
+                    <h3 class="fs-2 mb-3">Quick Adaption</h3>
+                    <p class="mb-0">Instant meal and exercise substitutions to keep plans flexible and achievable.</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+.hero-section {
+    position: relative;
+    overflow: hidden;
+}
+
+.gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.animated-logo {
+    position: relative;
+}
+
+.flame-logo {
+    color: var(--fitfuel-orange);
+}
+
+.flame-path {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: draw 2s ease forwards;
+}
+
+@keyframes draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(255, 69, 0, 0.1);
+}
+
+.feature-icon i {
+    width: 32px;
+    height: 32px;
+    stroke-width: 2;
+}
+</style>
 {% endblock %}

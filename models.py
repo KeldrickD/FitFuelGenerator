@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from sqlalchemy import or_
 
 # Create db instance
 db = SQLAlchemy()
@@ -22,6 +23,7 @@ class Client(db.Model):
     goal = db.Column(db.String(50))
     plans = db.relationship('Plan', backref='client', lazy=True)
     progress_logs = db.relationship('ProgressLog', backref='client', lazy=True)
+    allergies = db.Column(db.JSON, default=list)  # Store allergies as a list
 
 class Plan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -51,3 +53,26 @@ class ExerciseProgression(db.Model):
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
     current_level = db.Column(db.String(20))  # Current difficulty level
     next_milestone = db.Column(db.JSON)  # Next progression target
+
+class MealIngredient(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    category = db.Column(db.String(50), nullable=False)  # e.g., protein, carb, vegetable
+    nutrition_per_100g = db.Column(db.JSON)  # Nutritional information
+    common_allergens = db.Column(db.JSON, default=list)
+    estimated_cost = db.Column(db.Float)  # Cost per standard serving
+    substitutes = db.relationship(
+        'SubstitutionRule',
+        primaryjoin="or_(MealIngredient.id==SubstitutionRule.ingredient_id, MealIngredient.id==SubstitutionRule.substitute_id)",
+        lazy='dynamic'
+    )
+
+class SubstitutionRule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ingredient_id = db.Column(db.Integer, db.ForeignKey('meal_ingredient.id'), nullable=False)
+    substitute_id = db.Column(db.Integer, db.ForeignKey('meal_ingredient.id'), nullable=False)
+    conversion_ratio = db.Column(db.Float, default=1.0)  # How much substitute to use
+    preference_tags = db.Column(db.JSON, default=list)  # e.g., ['vegan', 'gluten-free']
+    nutrition_difference = db.Column(db.JSON)  # Difference in key nutrients
+    cost_difference = db.Column(db.Float)  # Price difference per serving
+    suitability_score = db.Column(db.Float)  # AI-calculated score for substitution

@@ -1,0 +1,280 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Search Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">Find Ingredient Substitutes</h2>
+                </div>
+                <div class="card-body">
+                    <form id="substituteSearchForm" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="ingredientSearch" class="form-label">Ingredient</label>
+                            <input type="text" class="form-control" id="ingredientSearch" 
+                                   placeholder="Enter ingredient name" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="clientSelect" class="form-label">Client (Optional)</label>
+                            <select class="form-select" id="clientSelect">
+                                <option value="">Select Client</option>
+                                {% for client in clients %}
+                                <option value="{{ client.id }}">{{ client.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="budgetLimit" class="form-label">Budget Limit</label>
+                            <input type="number" class="form-control" id="budgetLimit" 
+                                   placeholder="Max cost per serving" step="0.01">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i data-feather="search" class="feather-small me-2"></i>Find Substitutes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="row mb-4" id="substitutesResult" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Available Substitutes</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Substitute</th>
+                                    <th>Conversion Ratio</th>
+                                    <th>Cost Difference</th>
+                                    <th>Nutrition Impact</th>
+                                    <th>Suitability Score</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="substitutesTable">
+                                <!-- Results will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validation Modal -->
+    <div class="modal fade" id="validationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Validate Substitution</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="validationForm">
+                        <input type="hidden" id="originalIngredient">
+                        <input type="hidden" id="substituteIngredient">
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Amount Needed</label>
+                            <input type="number" class="form-control" id="amount" 
+                                   step="0.1" required>
+                            <small class="text-muted">Enter the amount of original ingredient needed</small>
+                        </div>
+                    </form>
+                    <div id="validationResults" class="mt-3" style="display: none;">
+                        <!-- Validation results will be shown here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="validateButton">Validate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const substituteSearchForm = document.getElementById('substituteSearchForm');
+    const substitutesResult = document.getElementById('substitutesResult');
+    const substitutesTable = document.getElementById('substitutesTable');
+    const validationModal = document.getElementById('validationModal');
+    const validateButton = document.getElementById('validateButton');
+
+    // Handle substitute search
+    substituteSearchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const ingredient = document.getElementById('ingredientSearch').value;
+        const clientId = document.getElementById('clientSelect').value;
+        const budgetLimit = document.getElementById('budgetLimit').value;
+
+        // Show loading state
+        substitutesTable.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+        substitutesResult.style.display = 'block';
+
+        // Fetch substitutes
+        const params = new URLSearchParams({
+            ingredient: ingredient,
+            ...(clientId && { client_id: clientId }),
+            ...(budgetLimit && { budget_limit: budgetLimit })
+        });
+
+        fetch(`/api/ingredients/substitutes?${params}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.substitutes && data.substitutes.length > 0) {
+                    substitutesTable.innerHTML = data.substitutes.map(sub => `
+                        <tr>
+                            <td>${sub.ingredient}</td>
+                            <td>${sub.conversion_ratio}x</td>
+                            <td>${formatCurrency(sub.cost_difference)}</td>
+                            <td>${formatNutritionDiff(sub.nutrition_difference)}</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: ${sub.suitability_score * 100}%">
+                                        ${Math.round(sub.suitability_score * 100)}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" 
+                                        onclick="openValidation('${ingredient}', '${sub.ingredient}')">
+                                    Validate
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    substitutesTable.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center">No substitutes found</td>
+                        </tr>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                substitutesTable.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-danger">
+                            Error finding substitutes
+                        </td>
+                    </tr>
+                `;
+            });
+    });
+
+    // Handle substitution validation
+    validateButton.addEventListener('click', function() {
+        const original = document.getElementById('originalIngredient').value;
+        const substitute = document.getElementById('substituteIngredient').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+
+        if (!amount) {
+            alert('Please enter a valid amount');
+            return;
+        }
+
+        validateButton.disabled = true;
+        validateButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Validating...';
+
+        fetch('/api/ingredients/validate-substitution', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ original, substitute, amount })
+        })
+        .then(response => response.json())
+        .then(result => {
+            const resultsDiv = document.getElementById('validationResults');
+            if (result.valid) {
+                resultsDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <h5>Substitution Valid</h5>
+                        <p>Use ${result.conversion_amount} ${substitute} instead of ${amount} ${original}</p>
+                        ${result.warnings.length > 0 ? `
+                            <hr>
+                            <h6>Warnings:</h6>
+                            <ul>
+                                ${result.warnings.map(w => `<li>${w}</li>`).join('')}
+                            </ul>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5>Invalid Substitution</h5>
+                        <p>${result.message}</p>
+                    </div>
+                `;
+            }
+            resultsDiv.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('validationResults').innerHTML = `
+                <div class="alert alert-danger">
+                    Error validating substitution
+                </div>
+            `;
+        })
+        .finally(() => {
+            validateButton.disabled = false;
+            validateButton.innerHTML = 'Validate';
+        });
+    });
+});
+
+// Helper Functions
+function openValidation(original, substitute) {
+    document.getElementById('originalIngredient').value = original;
+    document.getElementById('substituteIngredient').value = substitute;
+    document.getElementById('amount').value = '';
+    document.getElementById('validationResults').style.display = 'none';
+    
+    const modal = new bootstrap.Modal(document.getElementById('validationModal'));
+    modal.show();
+}
+
+function formatCurrency(value) {
+    return value >= 0 ? 
+        `+$${value.toFixed(2)}` : 
+        `-$${Math.abs(value).toFixed(2)}`;
+}
+
+function formatNutritionDiff(diff) {
+    const keys = Object.keys(diff);
+    if (keys.length === 0) return 'No significant changes';
+    
+    return keys.map(key => {
+        const value = diff[key];
+        const sign = value >= 0 ? '+' : '';
+        return `${key}: ${sign}${value}%`;
+    }).join('<br>');
+}
+</script>
+{% endblock %}

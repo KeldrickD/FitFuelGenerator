@@ -2,8 +2,11 @@ import os
 import logging
 from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from utils import workout_generator, meal_generator, pdf_generator, progression_tracker
-from models import db, Trainer, Client, Plan, ProgressLog, ExerciseProgression
+from utils import workout_generator, meal_generator, pdf_generator, progression_tracker, meal_substitution
+from models import (
+    db, Trainer, Client, Plan, ProgressLog, ExerciseProgression,
+    MealIngredient, SubstitutionRule
+)
 from datetime import datetime, timedelta
 
 # Configure logging
@@ -369,6 +372,99 @@ def update_client(client_id):
     except Exception as e:
         logging.error(f"Error updating client: {str(e)}")
         return jsonify({'error': 'Failed to update client'}), 500
+
+# Add this new route after the existing routes
+
+@app.route('/meal-substitutions')
+def meal_substitutions():
+    try:
+        clients = Client.query.all()
+        return render_template('meal_substitutions.html', clients=clients)
+    except Exception as e:
+        logging.error(f"Error loading meal substitutions page: {str(e)}")
+        flash('Error loading meal substitutions. Please try again.', 'danger')
+        return redirect(url_for('index'))
+
+@app.route('/api/ingredients/substitutes', methods=['GET'])
+def find_ingredient_substitutes():
+    try:
+        ingredient_name = request.args.get('ingredient')
+        client_id = request.args.get('client_id', type=int)
+        budget_limit = request.args.get('budget_limit', type=float)
+
+        if not ingredient_name:
+            return jsonify({'error': 'Ingredient name is required'}), 400
+
+        # Get client preferences and allergies
+        client = Client.query.get_or_404(client_id) if client_id else None
+        preferences = {
+            'diet_type': client.diet_preference if client else None,
+            'budget_conscious': bool(budget_limit),
+            'nutrition_focus': True  # Default to considering nutrition
+        }
+        allergies = client.allergies if client else []
+
+        # Find suitable substitutes
+        substitutes = meal_substitution.find_substitutes(
+            ingredient_name,
+            preferences,
+            allergies,
+            budget_limit
+        )
+
+        return jsonify({'substitutes': substitutes})
+
+    except Exception as e:
+        logging.error(f"Error finding substitutes: {str(e)}")
+        return jsonify({'error': 'Failed to find substitutes'}), 500
+
+@app.route('/api/ingredients/validate-substitution', methods=['POST'])
+def validate_ingredient_substitution():
+    try:
+        data = request.get_json()
+        if not all(k in data for k in ['original', 'substitute', 'amount']):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        validation = meal_substitution.validate_substitution(
+            data['original'],
+            data['substitute'],
+            float(data['amount'])
+        )
+
+        return jsonify(validation)
+
+    except Exception as e:
+        logging.error(f"Error validating substitution: {str(e)}")
+        return jsonify({'error': 'Failed to validate substitution'}), 500
+
+@app.route('/api/ingredients', methods=['GET'])
+def list_ingredients():
+    try:
+        # Get optional filters
+        category = request.args.get('category')
+        query = MealIngredient.query
+
+        if category:
+            query = query.filter_by(category=category)
+
+        ingredients = query.all()
+        return jsonify({
+            'ingredients': [
+                {
+                    'id': ing.id,
+                    'name': ing.name,
+                    'category': ing.category,
+                    'nutrition_per_100g': ing.nutrition_per_100g,
+                    'common_allergens': ing.common_allergens,
+                    'estimated_cost': ing.estimated_cost
+                }
+                for ing in ingredients
+            ]
+        })
+
+    except Exception as e:
+        logging.error(f"Error listing ingredients: {str(e)}")
+        return jsonify({'error': 'Failed to list ingredients'}), 500
 
 with app.app_context():
     db.create_all()

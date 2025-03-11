@@ -1,0 +1,116 @@
+/* Custom styles for FitFuel */
+
+/* General Layout */
+.preview-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Card Styles */
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: var(--bs-dark);
+    border-bottom: 1px solid var(--bs-border-color);
+    padding: 1rem;
+}
+
+.card-title {
+    color: var(--bs-light);
+    margin: 0;
+}
+
+/* Table Styles */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Icon Styles */
+.feather {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
+    stroke: currentColor;
+    fill: none;
+    vertical-align: text-bottom;
+}
+
+.feather-small {
+    width: 14px;
+    height: 14px;
+}
+
+/* Workout and Meal Plan Specific Styles */
+.workout-day, .meal-day {
+    border-bottom: 1px solid var(--bs-border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.workout-day:last-child, .meal-day:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.rest-day {
+    color: var(--bs-info);
+    font-style: italic;
+    padding: 10px 0;
+}
+
+.progression-note, .motivation-note, .substitutions-note {
+    margin-top: 10px;
+    padding: 5px 0;
+}
+
+/* Tooltip Styles */
+.substitutions-tooltip {
+    cursor: pointer;
+}
+
+/* Form Styles */
+.form-control, .form-select {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-border-color);
+    color: var(--bs-light);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-primary);
+    color: var(--bs-light);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Button Styles */
+.btn-primary {
+    padding: 0.5rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .preview-container {
+        padding: 10px;
+    }
+    
+    .table-responsive {
+        margin-bottom: 1rem;
+    }
+}

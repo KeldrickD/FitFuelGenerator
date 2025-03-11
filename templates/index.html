@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="px-4 py-5 my-5 text-center">
+    <i data-feather="activity" class="display-1 mb-4"></i>
+    <h1 class="display-5 fw-bold">FitFuel</h1>
+    <div class="col-lg-6 mx-auto">
+        <p class="lead mb-4">
+            Power client wins with AI-generated workout and meal plans.
+            Create custom plans tailored to goals, fitness levels, and budgets in minutes.
+        </p>
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a href="{{ url_for('create_plan') }}" class="btn btn-primary btn-lg px-4 gap-3">
+                Create New Plan
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
+    <div class="col d-flex align-items-start">
+        <div class="text-body-emphasis d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
+            <i data-feather="trending-up"></i>
+        </div>
+        <div>
+            <h3 class="fs-2">Progression Booster</h3>
+            <p>Workouts that evolve weekly to keep clients advancing towards their goals.</p>
+        </div>
+    </div>
+    <div class="col d-flex align-items-start">
+        <div class="text-body-emphasis d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
+            <i data-feather="dollar-sign"></i>
+        </div>
+        <div>
+            <h3 class="fs-2">Budget Smart</h3>
+            <p>Meal plans that respect budgets while maintaining nutritional goals.</p>
+        </div>
+    </div>
+    <div class="col d-flex align-items-start">
+        <div class="text-body-emphasis d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
+            <i data-feather="refresh-cw"></i>
+        </div>
+        <div>
+            <h3 class="fs-2">Quick Substitutions</h3>
+            <p>Instant meal and exercise alternatives to keep plans flexible.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

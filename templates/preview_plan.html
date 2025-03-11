@@ -1,0 +1,141 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="preview-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Plan Preview for {{ client_data.name }}</h2>
+        <a href="{{ url_for('generate_pdf') }}" class="btn btn-primary">
+            <i data-feather="download" class="me-2"></i>Download PDF
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Client Information -->
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Client Details</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Goal:</strong> {{ client_data.goal|replace('_', ' ')|title }}</p>
+                            <p><strong>Fitness Level:</strong> {{ client_data.fitness_level|title }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Diet Preference:</strong> {{ client_data.diet_preference|replace('_', ' ')|title }}</p>
+                            <p><strong>Weekly Budget:</strong> ${{ client_data.weekly_budget }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workout Plan -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Workout Plan</h3>
+                </div>
+                <div class="card-body">
+                    {% for day, workout in workout_plan.items() %}
+                    <div class="workout-day mb-4">
+                        <h4>{{ day }}</h4>
+                        {% if workout.exercises == 'Rest Day' %}
+                            <p class="rest-day">Rest Day</p>
+                        {% else %}
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Exercise</th>
+                                            <th>Sets</th>
+                                            <th>Reps</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for exercise in workout.exercises %}
+                                        <tr>
+                                            <td>{{ exercise.name }}</td>
+                                            <td>{{ exercise.sets }}</td>
+                                            <td>{{ exercise.reps }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% if workout.progression %}
+                            <div class="progression-note">
+                                <small class="text-muted"><i data-feather="trending-up" class="feather-small"></i> {{ workout.progression }}</small>
+                            </div>
+                            {% endif %}
+                            {% if workout.motivation %}
+                            <div class="motivation-note">
+                                <small class="text-info"><i data-feather="heart" class="feather-small"></i> {{ workout.motivation }}</small>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Meal Plan -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Meal Plan</h3>
+                </div>
+                <div class="card-body">
+                    {% for day, day_meals in meal_plan.items() %}
+                    <div class="meal-day mb-4">
+                        <h4>{{ day }}</h4>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Meal</th>
+                                        <th>Description</th>
+                                        <th>Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for meal_type, meal in day_meals.meals.items() %}
+                                    <tr>
+                                        <td>{{ meal_type|title }}</td>
+                                        <td>{{ meal.name }}</td>
+                                        <td>${{ "%.2f"|format(meal.cost) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="2" class="text-end"><strong>Daily Total:</strong></td>
+                                        <td>${{ "%.2f"|format(day_meals.total_cost) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        {% if day_meals.substitutions %}
+                        <div class="substitutions-note">
+                            <small class="text-muted">
+                                <i data-feather="refresh-cw" class="feather-small"></i> 
+                                Possible substitutions available
+                                <span class="substitutions-tooltip" 
+                                      data-bs-toggle="tooltip" 
+                                      data-bs-placement="top" 
+                                      title="{% for original, substitute in day_meals.substitutions.items() %}{{ original }} → {{ substitute }}&#13;{% endfor %}">
+                                    <i data-feather="info" class="feather-small"></i>
+                                </span>
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

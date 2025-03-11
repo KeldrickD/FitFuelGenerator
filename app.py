@@ -116,15 +116,31 @@ def create_plan():
 
 @app.route('/preview_plan')
 def preview_plan():
-    plan_data = session.get('current_plan')
-    if not plan_data:
-        flash('No plan data found. Please create a new plan.', 'warning')
-        return redirect(url_for('create_plan'))
+    """Preview the most recently created plan"""
+    try:
+        client_id = session.get('client_id')
+        if not client_id:
+            flash('No active session found. Please start the quiz again.', 'warning')
+            return redirect(url_for('fitness_quiz'))
 
-    return render_template('preview_plan.html', 
-                         client_data=plan_data['client_data'],
-                         workout_plan=plan_data['workout_plan'],
-                         meal_plan=plan_data['meal_plan'])
+        # Get the most recent plan for this client
+        plan = Plan.query.filter_by(client_id=client_id)\
+            .order_by(Plan.created_at.desc())\
+            .first()
+
+        if not plan:
+            flash('No plan found. Please complete the fitness quiz.', 'warning')
+            return redirect(url_for('fitness_quiz'))
+
+        return render_template('preview_plan.html', 
+                            client_data=plan.client,
+                            workout_plan=plan.workout_plan,
+                            meal_plan=plan.meal_plan)
+    except Exception as e:
+        logging.error(f"Error previewing plan: {str(e)}")
+        flash('Error loading plan preview. Please try again.', 'danger')
+        return redirect(url_for('fitness_quiz'))
+
 
 @app.route('/generate_pdf')
 def generate_pdf():
@@ -436,13 +452,22 @@ def submit_fitness_quiz():
 
         client_id = session.get('client_id')
         if not client_id:
-            return jsonify({'error': 'No client session found'}), 401
-
-        client = Client.query.get_or_404(client_id)
-
-        # Update client profile with quiz data
-        client.fitness_level = data.get('fitnessLevel')
-        client.goal = data.get('primaryGoal')
+            # Create a new client if none exists
+            client = Client(
+                name=data.get('name', 'New Client'),
+                fitness_level=data.get('fitnessLevel'),
+                goal=data.get('primaryGoal')
+            )
+            db.session.add(client)
+            db.session.flush()  # Get the client.id
+            client_id = client.id
+            session['client_id'] = client_id
+            logging.info(f"Created new client with ID: {client_id}")
+        else:
+            client = Client.query.get_or_404(client_id)
+            # Update existing client
+            client.fitness_level = data.get('fitnessLevel')
+            client.goal = data.get('primaryGoal')
 
         # Create a new dietary preference record
         dietary_pref = DietaryPreference(
@@ -507,11 +532,12 @@ def submit_fitness_quiz():
         )
 
         db.session.commit()
+        logging.info(f"Successfully created plan {plan.id} for client {client_id}")
 
         # Redirect to plan preview
         return jsonify({
             'success': True,
-            'redirect': url_for('preview_plan', plan_id=plan.id)
+            'redirect': url_for('preview_plan')  # Removed plan_id parameter
         })
 
     except Exception as e:

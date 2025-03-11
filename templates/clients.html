@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="card-title mb-0">Your Clients</h2>
+                    <a href="{{ url_for('create_plan') }}" class="btn btn-primary">
+                        <i data-feather="user-plus" class="me-2"></i>Add New Client
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if clients %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Goal</th>
+                                        <th>Fitness Level</th>
+                                        <th>Diet</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for client in clients %}
+                                    <tr>
+                                        <td>{{ client.name }}</td>
+                                        <td>{{ client.goal|replace('_', ' ')|title }}</td>
+                                        <td>{{ client.fitness_level|title }}</td>
+                                        <td>{{ client.diet_preference|replace('_', ' ')|title }}</td>
+                                        <td>
+                                            <a href="{{ url_for('view_progress', client_id=client.id) }}" 
+                                               class="btn btn-sm btn-primary">
+                                                <i data-feather="activity" class="feather-small me-1"></i>
+                                                View Progress
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i data-feather="users" class="mb-3" style="width: 48px; height: 48px; opacity: 0.5;"></i>
+                            <h3 class="h4 mb-3">No Clients Yet</h3>
+                            <p class="text-muted mb-4">Start by creating a new plan for your first client.</p>
+                            <a href="{{ url_for('create_plan') }}" class="btn btn-primary">
+                                <i data-feather="plus-circle" class="me-2"></i>Create First Plan
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

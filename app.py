@@ -24,6 +24,17 @@ db.init_app(app)
 def index():
     return render_template('index.html')
 
+@app.route('/clients')
+def clients_list():
+    try:
+        # For now, we'll show all clients since we haven't implemented authentication yet
+        clients = Client.query.all()
+        return render_template('clients.html', clients=clients)
+    except Exception as e:
+        logging.error(f"Error loading clients: {str(e)}")
+        flash('Error loading client list. Please try again.', 'danger')
+        return redirect(url_for('index'))
+
 @app.route('/create_plan', methods=['GET', 'POST'])
 def create_plan():
     if request.method == 'POST':

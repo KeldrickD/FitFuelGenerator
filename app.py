@@ -110,6 +110,7 @@ def generate_pdf():
 @app.route('/client/<int:client_id>/progress')
 def view_progress(client_id):
     try:
+        logging.debug(f"Viewing progress for client_id: {client_id}") #Added logging
         client = Client.query.get_or_404(client_id)
 
         # Fetch progress logs and exercise progressions
@@ -161,6 +162,7 @@ def view_progress(client_id):
 def log_progress():
     try:
         data = request.get_json()
+        logging.debug(f"Logging progress for client_id: {data['client_id']} with data: {data}") #Added logging
 
         # Create new progress log
         progress_log = ProgressLog(
@@ -327,6 +329,7 @@ def dashboard():
 @app.route('/api/client/<int:client_id>')
 def get_client(client_id):
     try:
+        logging.debug(f"Fetching client data for client_id: {client_id}") #Added logging
         client = Client.query.get_or_404(client_id)
         return jsonify({
             'id': client.id,

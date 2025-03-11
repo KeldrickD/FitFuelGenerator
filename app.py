@@ -31,7 +31,7 @@ with app.app_context():
     from models import (
         Trainer, Client, Plan, ProgressLog, ExerciseProgression,
         MealIngredient, SubstitutionRule, DietaryPreference, MealPlan,
-        ActivityFeed, Goal, GoalMilestone
+        ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement # Added Achievement and ClientAchievement
     )
     db.create_all()
 
@@ -669,6 +669,177 @@ def list_ingredients():
     except Exception as e:
         logging.error(f"Error listing ingredients: {str(e)}")
         return jsonify({'error': 'Failed to list ingredients'}), 500
+
+
+@app.route('/api/achievements/check', methods=['POST'])
+def check_achievements():
+    """Check and award new achievements for a client"""
+    try:
+        data = request.get_json()
+        client_id = data.get('client_id')
+        activity_type = data.get('activity_type')
+
+        if not client_id:
+            return jsonify({'error': 'Client ID is required'}), 400
+
+        client = Client.query.get_or_404(client_id)
+
+        # Get all achievements for this activity type
+        achievements = Achievement.query.filter_by(type=activity_type).all()
+        earned_achievements = []
+
+        for achievement in achievements:
+            # Check if client already has this achievement
+            existing = ClientAchievement.query.filter_by(
+                client_id=client_id,
+                achievement_id=achievement.id,
+                completed=True
+            ).first()
+
+            if not existing:
+                # Calculate progress based on achievement criteria
+                progress = calculate_achievement_progress(client, achievement)
+
+                if progress >= 100:  # Achievement earned
+                    client_achievement = ClientAchievement(
+                        client_id=client_id,
+                        achievement_id=achievement.id,
+                        progress=100,
+                        completed=True
+                    )
+                    db.session.add(client_achievement)
+
+                    # Update client's total points
+                    client.points += achievement.points
+
+                    earned_achievements.append({
+                        'name': achievement.name,
+                        'description': achievement.description,
+                        'icon': achievement.icon,
+                        'level': achievement.level,
+                        'points': achievement.points
+                    })
+
+                    # Log activity
+                    log_activity(
+                        client_id=client_id,
+                        activity_type='achievement_earned',
+                        description=f"Earned the {achievement.name} badge!",
+                        icon='award',
+                        priority='high',
+                        is_milestone=True,
+                        extra_data={
+                            'achievement_name': achievement.name,
+                            'achievement_level': achievement.level,
+                            'points_earned': achievement.points
+                        }
+                    )
+                else:
+                    # Update progress
+                    client_achievement = ClientAchievement.query.filter_by(
+                        client_id=client_id,
+                        achievement_id=achievement.id
+                    ).first()
+
+                    if client_achievement:
+                        client_achievement.progress = progress
+                    else:
+                        client_achievement = ClientAchievement(
+                            client_id=client_id,
+                            achievement_id=achievement.id,
+                            progress=progress
+                        )
+                        db.session.add(client_achievement)
+
+        db.session.commit()
+        return jsonify({
+            'earned_achievements': earned_achievements,
+            'total_points': client.points
+        })
+
+    except Exception as e:
+        logging.error(f"Error checking achievements: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to check achievements'}), 500
+
+@app.route('/client/<int:client_id>/achievements')
+def view_achievements(client_id):
+    try:
+        client = Client.query.get_or_404(client_id)
+
+        # Get all achievements and client's progress
+        achievements = Achievement.query.all()
+        client_achievements = ClientAchievement.query.filter_by(client_id=client_id).all()
+
+        # Create achievement progress map
+        progress_map = {
+            ca.achievement_id: {
+                'progress': ca.progress,
+                'completed': ca.completed,
+                'earned_at': ca.earned_at
+            }
+            for ca in client_achievements
+        }
+
+        return render_template(
+            'achievements.html',
+            client=client,
+            achievements=achievements,
+            progress_map=progress_map
+        )
+
+    except Exception as e:
+        logging.error(f"Error viewing achievements: {str(e)}")
+        flash('Error loading achievements. Please try again.', 'danger')
+        return redirect(url_for('dashboard'))
+
+def calculate_achievement_progress(client, achievement):
+    """Calculate progress towards an achievement based on its criteria"""
+    try:
+        criteria = achievement.criteria
+        achievement_type = achievement.type
+
+        if achievement_type == 'workout_streak':
+            # Calculate workout streak
+            logs = ProgressLog.query.filter_by(
+                client_id=client.id,
+                workout_completed=True
+            ).order_by(ProgressLog.log_date.desc()).all()
+
+            streak = 0
+            last_date = None
+
+            for log in logs:
+                if not last_date:
+                    streak = 1
+                    last_date = log.log_date.date()
+                else:
+                    if (last_date - log.log_date.date()).days == 1:
+                        streak += 1
+                        last_date = log.log_date.date()
+                    else:
+                        break
+
+            target_streak = criteria.get('streak_days', 7)
+            return min((streak / target_streak) * 100, 100)
+
+        elif achievement_type == 'goal_completion':
+            # Calculate goal completion rate
+            completed_goals = Goal.query.filter_by(
+                client_id=client.id,
+                status='completed'
+            ).count()
+
+            target_goals = criteria.get('completed_goals', 1)
+            return min((completed_goals / target_goals) * 100, 100)
+
+        # Add more achievement types as needed
+
+        return 0
+
+    except Exception as e:
+        logging.error(f"Error calculating achievement progress: {str(e)}")
+        return 0
 
 if __name__ == '__main__':
     app.run(debug=True)

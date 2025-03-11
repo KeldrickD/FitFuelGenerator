@@ -25,6 +25,7 @@ class Client(db.Model):
     meal_plans = db.relationship('MealPlan', backref='client', lazy=True)
     activities = db.relationship('ActivityFeed', backref='client', lazy=True)
     goals = db.relationship('Goal', backref='client', lazy=True)  # Added goals relationship
+    points = db.Column(db.Integer, default=0)  # Total achievement points
 
 class ActivityFeed(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -144,3 +145,26 @@ class GoalProgress(db.Model):
     recorded_date = db.Column(db.Date, nullable=False)
     notes = db.Column(db.Text)
     metrics = db.Column(db.JSON)  # Additional progress metrics
+
+class Achievement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    type = db.Column(db.String(50), nullable=False)  # workout, nutrition, goals, etc.
+    criteria = db.Column(db.JSON)  # Requirements to earn the achievement
+    icon = db.Column(db.String(50))  # Feather icon name
+    level = db.Column(db.String(20))  # bronze, silver, gold
+    points = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ClientAchievement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    achievement_id = db.Column(db.Integer, db.ForeignKey('achievement.id'), nullable=False)
+    earned_at = db.Column(db.DateTime, default=datetime.utcnow)
+    progress = db.Column(db.Float, default=0)  # Progress towards achievement (0-100)
+    completed = db.Column(db.Boolean, default=False)
+
+    # Add relationships
+    client = db.relationship('Client', backref=db.backref('achievements', lazy=True))
+    achievement = db.relationship('Achievement')

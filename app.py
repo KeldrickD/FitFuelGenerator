@@ -5,9 +5,41 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from utils import workout_generator, meal_generator, pdf_generator, progression_tracker, meal_substitution
 from models import (
     db, Trainer, Client, Plan, ProgressLog, ExerciseProgression,
-    MealIngredient, SubstitutionRule, DietaryPreference, MealPlan # Added new models
+    MealIngredient, SubstitutionRule, DietaryPreference, MealPlan, ActivityFeed # Added new models
 )
 from datetime import datetime, timedelta
+
+# Add this helper function at the top of the file after imports
+def log_activity(client_id, activity_type, description, icon=None, priority='normal', is_milestone=False, extra_data=None):
+    """
+    Log a new activity in the activity feed.
+
+    Args:
+        client_id: ID of the client
+        activity_type: Type of activity (workout, meal, goal, etc.)
+        description: Description of the activity
+        icon: Feather icon name (optional)
+        priority: Priority level (high, normal, low)
+        is_milestone: Whether this activity represents a milestone
+        extra_data: Additional activity-specific data
+    """
+    try:
+        activity = ActivityFeed(
+            client_id=client_id,
+            activity_type=activity_type,
+            description=description,
+            icon=icon or activity_type,  # Use activity type as default icon
+            priority=priority,
+            is_milestone=is_milestone,
+            extra_data=extra_data or {}
+        )
+        db.session.add(activity)
+        db.session.commit()
+        logging.info(f"Activity logged for client {client_id}: {description}")
+    except Exception as e:
+        logging.error(f"Error logging activity: {str(e)}")
+        db.session.rollback()
+
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -280,23 +312,34 @@ def dashboard():
             'completion_rate': round(completion_rate)
         }
 
-        # Get recent activities
-        recent_activities = []
-        recent_logs = ProgressLog.query.order_by(ProgressLog.log_date.desc()).limit(5).all()
+        # Get activity feed with enhanced details
+        activities = ActivityFeed.query\
+            .order_by(ActivityFeed.created_at.desc())\
+            .limit(20)\
+            .all()
 
-        for log in recent_logs:
-            client = Client.query.get(log.client_id)
-            recent_activities.append({
+        activity_feed = []
+        for activity in activities:
+            client = Client.query.get(activity.client_id)
+            activity_feed.append({
                 'client_name': client.name,
-                'icon': 'activity',
-                'description': 'Completed workout session' if log.workout_completed else 'Logged progress',
-                'timestamp': log.log_date.strftime('%Y-%m-%d %H:%M')
+                'activity_type': activity.activity_type,
+                'description': activity.description,
+                'icon': activity.icon,
+                'timestamp': activity.created_at.strftime('%Y-%m-%d %H:%M'),
+                'priority': activity.priority,
+                'is_milestone': activity.is_milestone,
+                'extra_data': activity.extra_data # Changed metadata to extra_data
             })
 
         # Add last activity to clients
         for client in clients:
-            latest_log = ProgressLog.query.filter_by(client_id=client.id).order_by(ProgressLog.log_date.desc()).first()
-            client.last_activity = latest_log.log_date.strftime('%Y-%m-%d %H:%M') if latest_log else None
+            latest_activity = ActivityFeed.query\
+                .filter_by(client_id=client.id)\
+                .order_by(ActivityFeed.created_at.desc())\
+                .first()
+
+            client.last_activity = latest_activity.created_at.strftime('%Y-%m-%d %H:%M') if latest_activity else None
 
             # Get client's trend
             progress_logs = ProgressLog.query.filter_by(client_id=client.id).order_by(ProgressLog.log_date.desc()).all()
@@ -320,9 +363,9 @@ def dashboard():
                 client.trend = 'neutral'
 
         return render_template('dashboard.html',
-                             clients=clients,
-                             stats=stats,
-                             recent_activities=recent_activities)
+                           clients=clients,
+                           stats=stats,
+                           activity_feed=activity_feed)
 
     except Exception as e:
         logging.error(f"Error loading dashboard: {str(e)}")

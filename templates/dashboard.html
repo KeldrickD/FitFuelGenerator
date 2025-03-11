@@ -124,22 +124,36 @@
             </div>
         </div>
 
-        <!-- Recent Activity -->
+        <!-- Activity Feed -->
         <div class="col-lg-4">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Recent Activity</h3>
+                    <h3 class="card-title">Activity Feed</h3>
                 </div>
                 <div class="card-body">
                     <div class="activity-feed">
-                        {% for activity in recent_activities %}
-                        <div class="activity-item mb-3">
-                            <div class="d-flex align-items-center mb-1">
-                                <i data-feather="{{ activity.icon }}" class="me-2"></i>
-                                <strong>{{ activity.client_name }}</strong>
+                        {% for activity in activity_feed %}
+                        <div class="activity-item mb-3 p-3 border-start border-4 {% if activity.priority == 'high' %}border-warning{% elif activity.priority == 'low' %}border-info{% else %}border-primary{% endif %} rounded-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="activity-icon me-3">
+                                    <i data-feather="{{ activity.icon }}" class="{% if activity.priority == 'high' %}text-warning{% elif activity.priority == 'low' %}text-info{% else %}text-primary{% endif %}"></i>
+                                </div>
+                                <div>
+                                    <strong class="d-block">{{ activity.client_name }}</strong>
+                                    <small class="text-muted">{{ activity.timestamp }}</small>
+                                </div>
+                                {% if activity.is_milestone %}
+                                <span class="badge bg-success ms-auto">Milestone</span>
+                                {% endif %}
                             </div>
-                            <p class="mb-1">{{ activity.description }}</p>
-                            <small class="text-muted">{{ activity.timestamp }}</small>
+                            <p class="mb-0">{{ activity.description }}</p>
+                            {% if activity.extra_data %}
+                            <div class="activity-metadata mt-2">
+                                {% for key, value in activity.extra_data.items() %}
+                                <small class="d-block text-muted">{{ key|title }}: {{ value }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>

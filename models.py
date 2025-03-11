@@ -26,6 +26,18 @@ class Client(db.Model):
     allergies = db.Column(db.JSON, default=list)  # Store allergies as a list
     dietary_preferences = db.relationship('DietaryPreference', backref='client', lazy=True)
     meal_plans = db.relationship('MealPlan', backref='client', lazy=True)
+    activities = db.relationship('ActivityFeed', backref='client', lazy=True)
+
+class ActivityFeed(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    activity_type = db.Column(db.String(50), nullable=False)  # workout, meal, goal, etc.
+    description = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    extra_data = db.Column(db.JSON)  # Store additional activity-specific data
+    priority = db.Column(db.String(20), default='normal')  # priority level: high, normal, low
+    icon = db.Column(db.String(50))  # Feather icon name for the activity
+    is_milestone = db.Column(db.Boolean, default=False)  # Mark important achievements
 
 class Plan(db.Model):
     id = db.Column(db.Integer, primary_key=True)

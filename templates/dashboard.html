@@ -195,40 +195,36 @@
 
 {% block scripts %}
 <script>
-// Initialize edit client modal and bind events
 document.addEventListener('DOMContentLoaded', function() {
     const editClientModal = document.getElementById('editClientModal');
-    const saveButton = document.getElementById('saveClientButton');
+    const saveClientButton = document.getElementById('saveClientButton');
 
-    // Handle modal show event
+    // Handle modal opening
     editClientModal.addEventListener('show.bs.modal', function(event) {
         const button = event.relatedTarget;
         const clientId = button.getAttribute('data-client-id');
 
-        // Clear any existing alerts
-        const existingAlerts = editClientModal.querySelectorAll('.alert');
-        existingAlerts.forEach(alert => alert.remove());
+        // Clear previous alerts
+        const alerts = editClientModal.querySelectorAll('.alert');
+        alerts.forEach(alert => alert.remove());
 
-        // Fetch client data and populate form
+        // Fetch and populate client data
         fetch(`/api/client/${clientId}`)
             .then(response => response.json())
-            .then(client => {
-                document.getElementById('clientId').value = client.id;
-                document.getElementById('clientName').value = client.name;
-                document.getElementById('clientGoal').value = client.goal;
-                document.getElementById('clientFitnessLevel').value = client.fitness_level;
+            .then(data => {
+                document.getElementById('clientId').value = data.id;
+                document.getElementById('clientName').value = data.name;
+                document.getElementById('clientGoal').value = data.goal;
+                document.getElementById('clientFitnessLevel').value = data.fitness_level;
             })
             .catch(error => {
                 console.error('Error:', error);
-                const alert = document.createElement('div');
-                alert.className = 'alert alert-danger';
-                alert.textContent = 'Error loading client data';
-                document.querySelector('.modal-body').prepend(alert);
+                showAlert('Error loading client data', 'danger');
             });
     });
 
     // Handle save button click
-    saveButton.addEventListener('click', function() {
+    saveClientButton.addEventListener('click', function() {
         const clientId = document.getElementById('clientId').value;
         const data = {
             name: document.getElementById('clientName').value,
@@ -236,55 +232,48 @@ document.addEventListener('DOMContentLoaded', function() {
             fitness_level: document.getElementById('clientFitnessLevel').value
         };
 
-        // Show loading state
-        saveButton.disabled = true;
-        saveButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+        // Disable button and show loading state
+        saveClientButton.disabled = true;
+        saveClientButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
 
+        // Send update request
         fetch(`/api/client/${clientId}`, {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify(data)
         })
         .then(response => response.json())
         .then(result => {
             if (result.success) {
-                // Show success message
-                const alert = document.createElement('div');
-                alert.className = 'alert alert-success alert-dismissible fade show';
-                alert.innerHTML = `
-                    Client updated successfully
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                document.querySelector('.modal-body').prepend(alert);
-
-                // Close modal and reload after a short delay
+                showAlert('Changes saved successfully!', 'success');
                 setTimeout(() => {
-                    const modal = bootstrap.Modal.getInstance(editClientModal);
-                    modal.hide();
-                    location.reload();
+                    window.location.reload();
                 }, 1000);
             } else {
-                throw new Error(result.error || 'Failed to update client');
+                throw new Error(result.error || 'Failed to save changes');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-danger alert-dismissible fade show';
-            alert.innerHTML = `
-                ${error.message || 'Error updating client'}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.querySelector('.modal-body').prepend(alert);
-        })
-        .finally(() => {
+            showAlert(error.message || 'Error saving changes', 'danger');
             // Reset button state
-            saveButton.disabled = false;
-            saveButton.innerHTML = 'Save Changes';
+            saveClientButton.disabled = false;
+            saveClientButton.innerHTML = 'Save Changes';
         });
     });
+
+    // Helper function to show alerts
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        editClientModal.querySelector('.modal-body').insertBefore(alertDiv, editClientModal.querySelector('form'));
+    }
 });
 </script>
 {% endblock %}

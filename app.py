@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, flash, redirect, url_for, ses
 from werkzeug.security import generate_password_hash, check_password_hash
 from utils import workout_generator, meal_generator, pdf_generator, progression_tracker
 from models import db, Trainer, Client, Plan, ProgressLog, ExerciseProgression
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -206,6 +206,154 @@ def log_progress():
     except Exception as e:
         logging.error(f"Error logging progress: {str(e)}")
         return jsonify({'error': 'Failed to log progress'}), 500
+
+@app.route('/dashboard')
+def dashboard():
+    try:
+        # Get all clients
+        clients = Client.query.all()
+
+        # Calculate dashboard statistics
+        total_clients = len(clients)
+
+        # Calculate weekly workouts
+        one_week_ago = datetime.utcnow() - timedelta(days=7)
+        weekly_workouts = ProgressLog.query.filter(
+            ProgressLog.log_date >= one_week_ago,
+            ProgressLog.workout_completed == True
+        ).count()
+
+        # Calculate improving clients percentage
+        improving_clients = 0
+        completion_rate = 0
+
+        if total_clients > 0:
+            for client in clients:
+                # Get client's progress logs
+                progress_logs = ProgressLog.query.filter_by(client_id=client.id).order_by(ProgressLog.log_date.desc()).all()
+                logs_data = [
+                    {
+                        'log_date': log.log_date.isoformat(),
+                        'workout_completed': log.workout_completed,
+                        'exercise_data': log.exercise_data,
+                        'metrics': log.metrics
+                    }
+                    for log in progress_logs
+                ]
+
+                if logs_data:
+                    completion_rate += sum(1 for log in logs_data if log['workout_completed']) / len(logs_data)
+
+                    # Get progression data
+                    progression_data = [
+                        {
+                            'exercise_name': prog.exercise_name,
+                            'progression_data': prog.progression_data,
+                            'current_level': prog.current_level,
+                            'next_milestone': prog.next_milestone
+                        }
+                        for prog in ExerciseProgression.query.filter_by(client_id=client.id).all()
+                    ]
+
+                    # Analyze progress
+                    insights = progression_tracker.analyze_client_progress(
+                        client.id,
+                        logs_data,
+                        progression_data
+                    )
+
+                    if insights['performance_trends']['trend'] == 'improving':
+                        improving_clients += 1
+
+            improving_clients = (improving_clients / total_clients) * 100
+            completion_rate = (completion_rate / total_clients) * 100
+
+        stats = {
+            'total_clients': total_clients,
+            'weekly_workouts': weekly_workouts,
+            'improving_clients': round(improving_clients),
+            'completion_rate': round(completion_rate)
+        }
+
+        # Get recent activities
+        recent_activities = []
+        recent_logs = ProgressLog.query.order_by(ProgressLog.log_date.desc()).limit(5).all()
+
+        for log in recent_logs:
+            client = Client.query.get(log.client_id)
+            recent_activities.append({
+                'client_name': client.name,
+                'icon': 'activity',
+                'description': 'Completed workout session' if log.workout_completed else 'Logged progress',
+                'timestamp': log.log_date.strftime('%Y-%m-%d %H:%M')
+            })
+
+        # Add last activity to clients
+        for client in clients:
+            latest_log = ProgressLog.query.filter_by(client_id=client.id).order_by(ProgressLog.log_date.desc()).first()
+            client.last_activity = latest_log.log_date.strftime('%Y-%m-%d %H:%M') if latest_log else None
+
+            # Get client's trend
+            progress_logs = ProgressLog.query.filter_by(client_id=client.id).order_by(ProgressLog.log_date.desc()).all()
+            if progress_logs:
+                logs_data = [
+                    {
+                        'log_date': log.log_date.isoformat(),
+                        'workout_completed': log.workout_completed,
+                        'exercise_data': log.exercise_data,
+                        'metrics': log.metrics
+                    }
+                    for log in progress_logs
+                ]
+                insights = progression_tracker.analyze_client_progress(
+                    client.id,
+                    logs_data,
+                    []  # Empty progression data as we only need overall trend
+                )
+                client.trend = insights['performance_trends']['trend']
+            else:
+                client.trend = 'neutral'
+
+        return render_template('dashboard.html',
+                             clients=clients,
+                             stats=stats,
+                             recent_activities=recent_activities)
+
+    except Exception as e:
+        logging.error(f"Error loading dashboard: {str(e)}")
+        flash('Error loading dashboard data. Please try again.', 'danger')
+        return redirect(url_for('index'))
+
+@app.route('/api/client/<int:client_id>')
+def get_client(client_id):
+    try:
+        client = Client.query.get_or_404(client_id)
+        return jsonify({
+            'id': client.id,
+            'name': client.name,
+            'goal': client.goal,
+            'fitness_level': client.fitness_level
+        })
+    except Exception as e:
+        logging.error(f"Error fetching client data: {str(e)}")
+        return jsonify({'error': 'Failed to fetch client data'}), 500
+
+@app.route('/api/client/<int:client_id>', methods=['PUT'])
+def update_client(client_id):
+    try:
+        client = Client.query.get_or_404(client_id)
+        data = request.get_json()
+
+        client.name = data.get('name', client.name)
+        client.goal = data.get('goal', client.goal)
+        client.fitness_level = data.get('fitness_level', client.fitness_level)
+
+        db.session.commit()
+
+        return jsonify({'success': True})
+    except Exception as e:
+        logging.error(f"Error updating client: {str(e)}")
+        return jsonify({'error': 'Failed to update client'}), 500
 
 with app.app_context():
     db.create_all()

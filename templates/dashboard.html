@@ -1,0 +1,247 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Dashboard Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="card-title mb-0">Trainer Dashboard</h2>
+                        <a href="{{ url_for('create_plan') }}" class="btn btn-primary">
+                            <i data-feather="user-plus" class="me-2"></i>Add New Client
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">
+                        <i data-feather="users" class="text-primary"></i>
+                    </div>
+                    <h3 class="fs-2 mb-2">{{ stats.total_clients }}</h3>
+                    <p class="mb-0">Active Clients</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">
+                        <i data-feather="activity" class="text-primary"></i>
+                    </div>
+                    <h3 class="fs-2 mb-2">{{ stats.weekly_workouts }}</h3>
+                    <p class="mb-0">Workouts This Week</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">
+                        <i data-feather="trending-up" class="text-primary"></i>
+                    </div>
+                    <h3 class="fs-2 mb-2">{{ stats.improving_clients }}%</h3>
+                    <p class="mb-0">Clients Improving</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">
+                        <i data-feather="check-circle" class="text-primary"></i>
+                    </div>
+                    <h3 class="fs-2 mb-2">{{ stats.completion_rate }}%</h3>
+                    <p class="mb-0">Completion Rate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity and Client List -->
+    <div class="row">
+        <!-- Client List -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Active Clients</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Goal</th>
+                                    <th>Progress</th>
+                                    <th>Last Activity</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in clients %}
+                                <tr>
+                                    <td>{{ client.name }}</td>
+                                    <td>{{ client.goal|replace('_', ' ')|title }}</td>
+                                    <td>
+                                        {% if client.trend == 'improving' %}
+                                            <span class="badge bg-success">Improving</span>
+                                        {% elif client.trend == 'declining' %}
+                                            <span class="badge bg-warning">Needs Focus</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Stable</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ client.last_activity|default('No activity', true) }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('view_progress', client_id=client.id) }}" 
+                                               class="btn btn-sm btn-primary">
+                                                <i data-feather="activity" class="feather-small"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-primary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#editClientModal"
+                                                    data-client-id="{{ client.id }}">
+                                                <i data-feather="edit-2" class="feather-small"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Activity</h3>
+                </div>
+                <div class="card-body">
+                    <div class="activity-feed">
+                        {% for activity in recent_activities %}
+                        <div class="activity-item mb-3">
+                            <div class="d-flex align-items-center mb-1">
+                                <i data-feather="{{ activity.icon }}" class="me-2"></i>
+                                <strong>{{ activity.client_name }}</strong>
+                            </div>
+                            <p class="mb-1">{{ activity.description }}</p>
+                            <small class="text-muted">{{ activity.timestamp }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Client Modal -->
+<div class="modal fade" id="editClientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Client</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editClientForm">
+                    <input type="hidden" id="clientId" name="clientId">
+                    <div class="mb-3">
+                        <label for="clientName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="clientName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="clientGoal" class="form-label">Goal</label>
+                        <select class="form-select" id="clientGoal" name="goal" required>
+                            <option value="weight_loss">Weight Loss</option>
+                            <option value="muscle_gain">Muscle Gain</option>
+                            <option value="endurance">Endurance</option>
+                            <option value="strength">Strength</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="clientFitnessLevel" class="form-label">Fitness Level</label>
+                        <select class="form-select" id="clientFitnessLevel" name="fitness_level" required>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="updateClient()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize edit client modal
+    const editClientModal = document.getElementById('editClientModal');
+    if (editClientModal) {
+        editClientModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const clientId = button.getAttribute('data-client-id');
+            
+            // Fetch client data and populate form
+            fetch(`/api/client/${clientId}`)
+                .then(response => response.json())
+                .then(client => {
+                    document.getElementById('clientId').value = client.id;
+                    document.getElementById('clientName').value = client.name;
+                    document.getElementById('clientGoal').value = client.goal;
+                    document.getElementById('clientFitnessLevel').value = client.fitness_level;
+                });
+        });
+    }
+});
+
+function updateClient() {
+    const form = document.getElementById('editClientForm');
+    const clientId = document.getElementById('clientId').value;
+    
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    fetch(`/api/client/${clientId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            location.reload();
+        } else {
+            alert('Error updating client');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating client');
+    });
+}
+</script>
+{% endblock %}

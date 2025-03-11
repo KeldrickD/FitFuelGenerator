@@ -428,7 +428,7 @@ def fitness_quiz():
 
 @app.route('/api/fitness-quiz', methods=['POST'])
 def submit_fitness_quiz():
-    """Handle fitness quiz submission"""
+    """Handle fitness quiz submission and create initial plan"""
     try:
         data = request.get_json()
         if not data:
@@ -462,23 +462,56 @@ def submit_fitness_quiz():
         )
         db.session.add(goal)
 
+        # Create initial training plan
+        plan = Plan(
+            client_id=client_id,
+            name=f"{client.name}'s Initial Plan",
+            start_date=datetime.now().date(),
+            end_date=(datetime.now() + timedelta(days=90)).date(),
+            type='initial',
+            status='active',
+            workout_frequency=int(data.get('weeklyCommitment', 3)),
+            workout_duration=int(data.get('workoutDuration', 45)),
+            focus_areas=data.get('focusAreas', []),
+            restrictions=data.get('healthConditions', ''),
+            workout_plan={
+                'schedule': generate_workout_schedule(
+                    data.get('fitnessLevel'),
+                    data.get('focusAreas', []),
+                    int(data.get('weeklyCommitment', 3))
+                )
+            },
+            meal_plan={
+                'dietary_restrictions': data.get('dietaryRestrictions', []),
+                'meals_per_day': int(data.get('weeklyCommitment', 3)),
+                'schedule': generate_meal_schedule(
+                    data.get('dietaryRestrictions', []),
+                    int(data.get('weeklyCommitment', 3))
+                )
+            }
+        )
+        db.session.add(plan)
+
         # Log activity
         log_activity(
             client_id=client_id,
             activity_type='onboarding_completed',
-            description='Completed fitness assessment quiz',
+            description='Completed fitness assessment quiz and created initial plan',
             icon='clipboard',
             priority='high',
             is_milestone=True,
-            extra_data=data
+            extra_data={
+                'quiz_data': data,
+                'plan_id': plan.id
+            }
         )
 
         db.session.commit()
 
-        # Redirect to dashboard or profile page
+        # Redirect to plan preview
         return jsonify({
             'success': True,
-            'redirect': url_for('view_progress', client_id=client_id)
+            'redirect': url_for('preview_plan', plan_id=plan.id)
         })
 
     except Exception as e:
@@ -486,6 +519,119 @@ def submit_fitness_quiz():
         db.session.rollback()
         return jsonify({'error': 'Failed to process quiz data'}), 500
 
+def generate_workout_schedule(fitness_level, focus_areas, weekly_frequency):
+    """Generate a personalized workout schedule based on quiz responses"""
+    schedule = []
+
+    # Define exercise templates based on fitness level
+    exercise_templates = {
+        'beginner': {
+            'upper_body': ['Push-ups (Modified)', 'Dumbbell Rows', 'Wall Push-ups'],
+            'lower_body': ['Bodyweight Squats', 'Lunges', 'Calf Raises'],
+            'core': ['Plank Hold', 'Bird Dogs', 'Dead Bugs'],
+            'cardio': ['Walking', 'Stationary Bike', 'Swimming']
+        },
+        'intermediate': {
+            'upper_body': ['Push-ups', 'Pull-ups', 'Dips'],
+            'lower_body': ['Barbell Squats', 'Romanian Deadlifts', 'Box Jumps'],
+            'core': ['Planks', 'Russian Twists', 'Mountain Climbers'],
+            'cardio': ['Running', 'HIIT Intervals', 'Rowing']
+        },
+        'advanced': {
+            'upper_body': ['Weighted Push-ups', 'Weighted Pull-ups', 'Ring Dips'],
+            'lower_body': ['Front Squats', 'Deadlifts', 'Plyometric Lunges'],
+            'core': ['Dragon Flags', 'Ab Wheel Rollouts', 'Hanging Leg Raises'],
+            'cardio': ['Sprinting', 'Complex HIIT', 'CrossFit WODs']
+        }
+    }
+
+    # Generate workouts based on focus areas and frequency
+    for week in range(4):  # Generate 4 weeks of workouts
+        weekly_workouts = []
+        for day in range(weekly_frequency):
+            workout = {
+                'day': day + 1,
+                'exercises': []
+            }
+
+            # Add exercises based on focus areas
+            for area in focus_areas:
+                if area in exercise_templates[fitness_level]:
+                    exercises = exercise_templates[fitness_level][area]
+                    workout['exercises'].extend([
+                        {
+                            'name': exercise,
+                            'sets': 3,
+                            'reps': '8-12',
+                            'rest': '60 sec'
+                        }
+                        for exercise in exercises[:2]  # Pick 2 exercises per area
+                    ])
+
+            weekly_workouts.append(workout)
+
+        schedule.append({
+            'week': week + 1,
+            'workouts': weekly_workouts
+        })
+
+    return schedule
+
+def generate_meal_schedule(dietary_restrictions, meals_per_day):
+    """Generate a basic meal schedule based on dietary preferences"""
+    meal_templates = {
+        'standard': {
+            'breakfast': ['Oatmeal with fruits', 'Eggs and toast', 'Greek yogurt parfait'],
+            'lunch': ['Grilled chicken salad', 'Turkey sandwich', 'Quinoa bowl'],
+            'dinner': ['Salmon with vegetables', 'Lean beef stir-fry', 'Chicken breast with sweet potato']
+        },
+        'vegetarian': {
+            'breakfast': ['Smoothie bowl', 'Avocado toast', 'Overnight oats'],
+            'lunch': ['Chickpea curry', 'Lentil soup', 'Buddha bowl'],
+            'dinner': ['Black bean burrito', 'Tofu stir-fry', 'Veggie pasta']
+        },
+        'vegan': {
+            'breakfast': ['Chia pudding', 'Tofu scramble', 'Green smoothie'],
+            'lunch': ['Tempeh wrap', 'Quinoa salad', 'Vegetable soup'],
+            'dinner': ['Lentil shepherd\'s pie', 'Mushroom curry', 'Bean chili']
+        }
+    }
+
+    # Determine diet type based on restrictions
+    diet_type = 'standard'
+    if 'vegan' in dietary_restrictions:
+        diet_type = 'vegan'
+    elif 'vegetarian' in dietary_restrictions:
+        diet_type = 'vegetarian'
+
+    schedule = []
+    meal_times = ['breakfast', 'lunch', 'dinner'][:meals_per_day]
+
+    # Generate 7 days of meals
+    for day in range(7):
+        daily_meals = {}
+        for meal_time in meal_times:
+            daily_meals[meal_time] = {
+                'suggestion': meal_templates[diet_type][meal_time][day % 3],
+                'macros': calculate_macros(meal_templates[diet_type][meal_time][day % 3], diet_type)
+            }
+        schedule.append({
+            'day': day + 1,
+            'meals': daily_meals
+        })
+
+    return schedule
+
+def calculate_macros(meal, diet_type):
+    """Calculate approximate macros for a meal"""
+    # Simplified macro calculations
+    base_macros = {
+        'standard': {'protein': 30, 'carbs': 40, 'fats': 30},
+        'vegetarian': {'protein': 25, 'carbs': 45, 'fats': 30},
+        'vegan': {'protein': 20, 'carbs': 50, 'fats': 30}
+    }
+
+    return base_macros[diet_type]
 
 @app.route('/client/<int:client_id>/goals/new')
 def goal_wizard(client_id):
@@ -696,8 +842,7 @@ def validate_ingredient_substitution():
         if not all(k in data for k in ['original', 'substitute', 'amount']):
             return jsonify({'error': 'Missing required fields'}), 400
 
-        validation = meal_substitution.validate_substitution(
-            data['original'],
+        validation = meal_substitution.validate_substitution(data['original'],
             data['substitute'],
             float(data['amount'])
         )

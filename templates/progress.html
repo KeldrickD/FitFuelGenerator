@@ -1,0 +1,269 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="card-title mb-0">Progress Overview for {{ client.name }}</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#logProgressModal">
+                        <i data-feather="plus" class="me-2"></i>Log Progress
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Progress Summary -->
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h3 class="fs-2 mb-3">{{ insights.completion_rate.rate }}%</h3>
+                                    <p class="mb-0">Workout Completion Rate</p>
+                                    <div class="mt-2">
+                                        {% if insights.completion_rate.trend == 'improving' %}
+                                            <span class="badge bg-success">
+                                                <i data-feather="trending-up" class="feather-small me-1"></i>Improving
+                                            </span>
+                                        {% elif insights.completion_rate.trend == 'declining' %}
+                                            <span class="badge bg-warning">
+                                                <i data-feather="trending-down" class="feather-small me-1"></i>Declining
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i data-feather="minus" class="feather-small me-1"></i>Stable
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h3 class="fs-2 mb-3">
+                                        {{ exercise_progressions|length }}
+                                    </h3>
+                                    <p class="mb-0">Exercises Tracked</p>
+                                    <div class="mt-2">
+                                        {% set improving_exercises = insights.exercise_insights.values()|selectattr('trend', 'equalto', 'improving')|list|length %}
+                                        <span class="badge bg-info">
+                                            <i data-feather="activity" class="feather-small me-1"></i>
+                                            {{ improving_exercises }} Improving
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h3 class="fs-2 mb-3">
+                                        {{ insights.performance_trends.trend|title }}
+                                    </h3>
+                                    <p class="mb-0">Overall Trend</p>
+                                    <div class="mt-2">
+                                        <span class="badge bg-primary">
+                                            <i data-feather="bar-chart-2" class="feather-small me-1"></i>Performance
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Recommendations -->
+                    <div class="mt-4">
+                        <h3 class="mb-3">AI Insights & Recommendations</h3>
+                        <div class="recommendations">
+                            {% for rec in insights.recommendations %}
+                                <div class="alert alert-{{ 'danger' if rec.priority == 'high' else 'warning' if rec.priority == 'medium' else 'info' }}">
+                                    <div class="d-flex align-items-center">
+                                        <i data-feather="{{ 'alert-circle' if rec.priority == 'high' else 'info' }}" 
+                                           class="me-2"></i>
+                                        {{ rec.message }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Exercise Progression Details -->
+                    <div class="mt-4">
+                        <h3 class="mb-3">Exercise Progression</h3>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Exercise</th>
+                                        <th>Current Level</th>
+                                        <th>Improvement Rate</th>
+                                        <th>Next Milestone</th>
+                                        <th>Trend</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for prog in exercise_progressions %}
+                                        {% set insight = insights.exercise_insights[prog.exercise_name] %}
+                                        <tr>
+                                            <td>{{ prog.exercise_name }}</td>
+                                            <td>{{ prog.current_level|title }}</td>
+                                            <td>
+                                                {% if insight.improvement_rate > 0 %}
+                                                    <span class="text-success">
+                                                        +{{ insight.improvement_rate }}%
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-danger">
+                                                        {{ insight.improvement_rate }}%
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ prog.next_milestone.description }}</td>
+                                            <td>
+                                                {% if insight.trend == 'improving' %}
+                                                    <span class="badge bg-success">Improving</span>
+                                                {% elif insight.trend == 'declining' %}
+                                                    <span class="badge bg-warning">Declining</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Stable</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Progress Modal -->
+<div class="modal fade" id="logProgressModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log Progress</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="progressForm">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="workoutCompleted" name="workoutCompleted">
+                            <label class="form-check-label" for="workoutCompleted">
+                                Workout Completed
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="exerciseFields">
+                        <!-- Exercise fields will be added dynamically -->
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitProgress()">Save Progress</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize exercise fields
+    const exerciseFields = document.getElementById('exerciseFields');
+    const exercises = {{ exercise_progressions|tojson|safe }};
+    
+    exercises.forEach(exercise => {
+        const field = document.createElement('div');
+        field.className = 'mb-3';
+        field.innerHTML = `
+            <h5>${exercise.exercise_name}</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Sets</label>
+                    <input type="number" class="form-control" name="sets_${exercise.exercise_name}" min="1">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Reps</label>
+                    <input type="number" class="form-control" name="reps_${exercise.exercise_name}" min="1">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Weight/Level</label>
+                    <input type="number" class="form-control" name="weight_${exercise.exercise_name}" min="0" step="0.5">
+                </div>
+            </div>
+        `;
+        exerciseFields.appendChild(field);
+    });
+});
+
+function submitProgress() {
+    const form = document.getElementById('progressForm');
+    const exercises = {{ exercise_progressions|tojson|safe }};
+    
+    const exerciseData = exercises.map(exercise => {
+        return {
+            name: exercise.exercise_name,
+            sets: parseInt(form.querySelector(`[name="sets_${exercise.exercise_name}"]`).value) || 0,
+            reps: parseInt(form.querySelector(`[name="reps_${exercise.exercise_name}"]`).value) || 0,
+            performance: parseInt(form.querySelector(`[name="weight_${exercise.exercise_name}"]`).value) || 0
+        };
+    });
+    
+    const data = {
+        client_id: {{ client.id }},
+        workout_completed: form.workoutCompleted.checked,
+        exercise_data: exerciseData,
+        notes: form.notes.value,
+        metrics: {
+            intensity: calculateIntensity(exerciseData),
+            volume: calculateVolume(exerciseData),
+            consistency: form.workoutCompleted.checked ? 1 : 0
+        }
+    };
+    
+    fetch(`/client/${data.client_id}/log-progress`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.message) {
+            location.reload();
+        } else {
+            alert('Error logging progress');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error logging progress');
+    });
+}
+
+function calculateIntensity(exerciseData) {
+    return exerciseData.reduce((acc, curr) => acc + curr.performance, 0) / exerciseData.length;
+}
+
+function calculateVolume(exerciseData) {
+    return exerciseData.reduce((acc, curr) => acc + (curr.sets * curr.reps), 0);
+}
+</script>
+{% endblock %}

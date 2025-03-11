@@ -1,5 +1,8 @@
-from app import db
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+
+# Create db instance
+db = SQLAlchemy()
 
 class Trainer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,6 +21,7 @@ class Client(db.Model):
     diet_preference = db.Column(db.String(50))
     goal = db.Column(db.String(50))
     plans = db.relationship('Plan', backref='client', lazy=True)
+    progress_logs = db.relationship('ProgressLog', backref='client', lazy=True)
 
 class Plan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -28,3 +32,22 @@ class Plan(db.Model):
     meal_plan = db.Column(db.JSON)
     weekly_budget = db.Column(db.Float)
     training_days = db.Column(db.Integer)
+
+class ProgressLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    log_date = db.Column(db.DateTime, default=datetime.utcnow)
+    workout_completed = db.Column(db.Boolean, default=False)
+    exercise_data = db.Column(db.JSON)  # Stores exercise performance details
+    notes = db.Column(db.Text)
+    metrics = db.Column(db.JSON)  # Stores key performance metrics
+    ai_insights = db.Column(db.JSON)  # Stores AI-generated insights
+
+class ExerciseProgression(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    exercise_name = db.Column(db.String(100), nullable=False)
+    progression_data = db.Column(db.JSON)  # Stores historical progression data
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+    current_level = db.Column(db.String(20))  # Current difficulty level
+    next_milestone = db.Column(db.JSON)  # Next progression target

@@ -195,96 +195,96 @@
 
 {% block scripts %}
 <script>
-// Function to update client
-function updateClient() {
-    const form = document.getElementById('editClientForm');
-    const clientId = document.getElementById('clientId').value;
-
-    const data = {
-        name: document.getElementById('clientName').value,
-        goal: document.getElementById('clientGoal').value,
-        fitness_level: document.getElementById('clientFitnessLevel').value
-    };
-
-    // Show loading state
-    const saveButton = document.getElementById('saveClientButton');
-    const originalText = saveButton.innerHTML;
-    saveButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
-    saveButton.disabled = true;
-
-    fetch(`/api/client/${clientId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            // Show success message
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-success alert-dismissible fade show';
-            alert.innerHTML = `
-                Client updated successfully
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.querySelector('.modal-body').prepend(alert);
-
-            // Close modal and reload after a short delay
-            setTimeout(() => {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('editClientModal'));
-                modal.hide();
-                location.reload();
-            }, 1000);
-        } else {
-            throw new Error(result.error || 'Failed to update client');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        // Show error message in modal
-        const alert = document.createElement('div');
-        alert.className = 'alert alert-danger alert-dismissible fade show';
-        alert.innerHTML = `
-            ${error.message || 'Error updating client'}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.querySelector('.modal-body').prepend(alert);
-    })
-    .finally(() => {
-        // Reset button state
-        saveButton.innerHTML = originalText;
-        saveButton.disabled = false;
-    });
-}
-
-// Initialize edit client modal
+// Initialize edit client modal and bind events
 document.addEventListener('DOMContentLoaded', function() {
     const editClientModal = document.getElementById('editClientModal');
     const saveButton = document.getElementById('saveClientButton');
 
-    if (editClientModal) {
-        editClientModal.addEventListener('show.bs.modal', function(event) {
-            const button = event.relatedTarget;
-            const clientId = button.getAttribute('data-client-id');
+    // Handle modal show event
+    editClientModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const clientId = button.getAttribute('data-client-id');
 
-            // Fetch client data and populate form
-            fetch(`/api/client/${clientId}`)
-                .then(response => response.json())
-                .then(client => {
-                    document.getElementById('clientId').value = client.id;
-                    document.getElementById('clientName').value = client.name;
-                    document.getElementById('clientGoal').value = client.goal;
-                    document.getElementById('clientFitnessLevel').value = client.fitness_level;
-                });
+        // Clear any existing alerts
+        const existingAlerts = editClientModal.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+
+        // Fetch client data and populate form
+        fetch(`/api/client/${clientId}`)
+            .then(response => response.json())
+            .then(client => {
+                document.getElementById('clientId').value = client.id;
+                document.getElementById('clientName').value = client.name;
+                document.getElementById('clientGoal').value = client.goal;
+                document.getElementById('clientFitnessLevel').value = client.fitness_level;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger';
+                alert.textContent = 'Error loading client data';
+                document.querySelector('.modal-body').prepend(alert);
+            });
+    });
+
+    // Handle save button click
+    saveButton.addEventListener('click', function() {
+        const clientId = document.getElementById('clientId').value;
+        const data = {
+            name: document.getElementById('clientName').value,
+            goal: document.getElementById('clientGoal').value,
+            fitness_level: document.getElementById('clientFitnessLevel').value
+        };
+
+        // Show loading state
+        saveButton.disabled = true;
+        saveButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+        fetch(`/api/client/${clientId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // Show success message
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show';
+                alert.innerHTML = `
+                    Client updated successfully
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.modal-body').prepend(alert);
+
+                // Close modal and reload after a short delay
+                setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(editClientModal);
+                    modal.hide();
+                    location.reload();
+                }, 1000);
+            } else {
+                throw new Error(result.error || 'Failed to update client');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show';
+            alert.innerHTML = `
+                ${error.message || 'Error updating client'}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.modal-body').prepend(alert);
+        })
+        .finally(() => {
+            // Reset button state
+            saveButton.disabled = false;
+            saveButton.innerHTML = 'Save Changes';
         });
-    }
-
-    // Add click event listener to save button
-    if (saveButton) {
-        saveButton.addEventListener('click', updateClient);
-    }
+    });
 });
 </script>
 {% endblock %}

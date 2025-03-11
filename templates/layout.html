@@ -112,10 +112,16 @@
     <script src="{{ url_for('static', filename='js/tutorial.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            feather.replace();
-            // Initialize tutorial if it's a new user
-            if (!localStorage.getItem('tutorialCompleted')) {
-                initTutorial();
+            try {
+                // Initialize Feather icons
+                feather.replace();
+
+                // Initialize tutorial if it's a new user
+                if (!localStorage.getItem('tutorialCompleted')) {
+                    initTutorial();
+                }
+            } catch (error) {
+                console.error('Error initializing application:', error);
             }
         });
     </script>

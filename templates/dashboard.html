@@ -185,7 +185,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="updateClient()">Save Changes</button>
+                <button type="button" class="btn btn-primary" id="saveClientButton">Save Changes</button>
             </div>
         </div>
     </div>
@@ -195,27 +195,7 @@
 
 {% block scripts %}
 <script>
-// Initialize edit client modal
-document.addEventListener('DOMContentLoaded', function() {
-    const editClientModal = document.getElementById('editClientModal');
-    if (editClientModal) {
-        editClientModal.addEventListener('show.bs.modal', function(event) {
-            const button = event.relatedTarget;
-            const clientId = button.getAttribute('data-client-id');
-
-            // Fetch client data and populate form
-            fetch(`/api/client/${clientId}`)
-                .then(response => response.json())
-                .then(client => {
-                    document.getElementById('clientId').value = client.id;
-                    document.getElementById('clientName').value = client.name;
-                    document.getElementById('clientGoal').value = client.goal;
-                    document.getElementById('clientFitnessLevel').value = client.fitness_level;
-                });
-        });
-    }
-});
-
+// Function to update client
 function updateClient() {
     const form = document.getElementById('editClientForm');
     const clientId = document.getElementById('clientId').value;
@@ -227,7 +207,7 @@ function updateClient() {
     };
 
     // Show loading state
-    const saveButton = document.querySelector('[onclick="updateClient()"]');
+    const saveButton = document.getElementById('saveClientButton');
     const originalText = saveButton.innerHTML;
     saveButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
     saveButton.disabled = true;
@@ -278,5 +258,33 @@ function updateClient() {
         saveButton.disabled = false;
     });
 }
+
+// Initialize edit client modal
+document.addEventListener('DOMContentLoaded', function() {
+    const editClientModal = document.getElementById('editClientModal');
+    const saveButton = document.getElementById('saveClientButton');
+
+    if (editClientModal) {
+        editClientModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const clientId = button.getAttribute('data-client-id');
+
+            // Fetch client data and populate form
+            fetch(`/api/client/${clientId}`)
+                .then(response => response.json())
+                .then(client => {
+                    document.getElementById('clientId').value = client.id;
+                    document.getElementById('clientName').value = client.name;
+                    document.getElementById('clientGoal').value = client.goal;
+                    document.getElementById('clientFitnessLevel').value = client.fitness_level;
+                });
+        });
+    }
+
+    // Add click event listener to save button
+    if (saveButton) {
+        saveButton.addEventListener('click', updateClient);
+    }
+});
 </script>
 {% endblock %}

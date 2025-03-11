@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from utils import progression_tracker  # Added import
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)

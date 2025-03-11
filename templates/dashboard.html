@@ -226,6 +226,12 @@ function updateClient() {
         fitness_level: document.getElementById('clientFitnessLevel').value
     };
 
+    // Show loading state
+    const saveButton = document.querySelector('[onclick="updateClient()"]');
+    const originalText = saveButton.innerHTML;
+    saveButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+    saveButton.disabled = true;
+
     fetch(`/api/client/${clientId}`, {
         method: 'PUT',
         headers: {
@@ -236,18 +242,40 @@ function updateClient() {
     .then(response => response.json())
     .then(result => {
         if (result.success) {
-            // Close the modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editClientModal'));
-            modal.hide();
-            // Reload the page to show updated data
-            location.reload();
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                Client updated successfully
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.modal-body').prepend(alert);
+
+            // Close modal and reload after a short delay
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editClientModal'));
+                modal.hide();
+                location.reload();
+            }, 1000);
         } else {
-            alert(result.error || 'Error updating client');
+            throw new Error(result.error || 'Failed to update client');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error updating client');
+        // Show error message in modal
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger alert-dismissible fade show';
+        alert.innerHTML = `
+            ${error.message || 'Error updating client'}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.modal-body').prepend(alert);
+    })
+    .finally(() => {
+        // Reset button state
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
     });
 }
 </script>

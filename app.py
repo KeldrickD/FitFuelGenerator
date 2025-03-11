@@ -344,13 +344,25 @@ def update_client(client_id):
         client = Client.query.get_or_404(client_id)
         data = request.get_json()
 
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        logging.debug(f"Updating client {client_id} with data: {data}")
+
+        # Update client fields
         client.name = data.get('name', client.name)
         client.goal = data.get('goal', client.goal)
         client.fitness_level = data.get('fitness_level', client.fitness_level)
 
-        db.session.commit()
+        try:
+            db.session.commit()
+            logging.debug(f"Successfully updated client {client_id}")
+            return jsonify({'success': True})
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Database error while updating client: {str(e)}")
+            return jsonify({'error': 'Database error occurred'}), 500
 
-        return jsonify({'success': True})
     except Exception as e:
         logging.error(f"Error updating client: {str(e)}")
         return jsonify({'error': 'Failed to update client'}), 500

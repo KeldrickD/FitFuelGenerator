@@ -201,36 +201,55 @@ class Achievement(db.Model):
         """Calculate how compatible this achievement is for the client"""
         try:
             base_score = 100
+            logging.debug(f"Starting compatibility calculation for achievement {self.name} and client {client.id}")
 
             # Adjust score based on client's fitness level
             level_mapping = {'beginner': 1, 'intermediate': 2, 'advanced': 3}
             client_level = level_mapping.get(client.fitness_level, 1)
             level_diff = abs(client_level - self.difficulty)
-            base_score -= level_diff * 10
+            level_adjustment = level_diff * 15  # Increased impact of level difference
+            base_score -= level_adjustment
+
+            logging.debug(f"After level adjustment ({level_diff} levels diff): {base_score}")
 
             # Check if achievement type matches client's goal
-            if self.type == 'workout_streak' and client.goal == 'consistency':
-                base_score += 20
-            elif self.type == 'strength' and client.goal == 'muscle_gain':
-                base_score += 20
-            elif self.type == 'nutrition' and client.goal == 'weight_loss':
-                base_score += 20
+            goal_bonus = 0
+            if (self.type == 'workout' and client.goal == 'consistency') or \
+               (self.type == 'strength' and client.goal == 'muscle_gain') or \
+               (self.type == 'nutrition' and client.goal == 'weight_loss') or \
+               (self.type == 'endurance' and client.goal == 'endurance'):
+                goal_bonus = 25  # Increased bonus for matching goals
+                base_score += goal_bonus
+                logging.debug(f"Added goal bonus: +{goal_bonus}")
 
             # Analyze recent activity patterns
             recent_logs = ProgressLog.query.filter_by(client_id=client.id)\
                 .filter(ProgressLog.log_date >= datetime.utcnow() - timedelta(days=30))\
                 .order_by(desc(ProgressLog.log_date)).all()
 
+            activity_bonus = 0
             if recent_logs:
-                # Increase score if client has been active recently
-                if len(recent_logs) >= 12:  # Active in last month
-                    base_score += 15
+                # Calculate activity frequency
+                activity_days = len(recent_logs)
+                if activity_days >= 12:  # Active in last month
+                    activity_bonus = 20
+                elif activity_days >= 8:
+                    activity_bonus = 15
+                elif activity_days >= 4:
+                    activity_bonus = 10
+
+                base_score += activity_bonus
+                logging.debug(f"Added activity bonus: +{activity_bonus}")
 
                 # Check workout completion rate
                 completion_rate = sum(1 for log in recent_logs if log.workout_completed) / len(recent_logs)
-                base_score += int(completion_rate * 10)
+                completion_bonus = int(completion_rate * 15)  # Adjusted completion impact
+                base_score += completion_bonus
+                logging.debug(f"Added completion bonus: +{completion_bonus}")
 
-            return max(0, min(base_score, 100))  # Keep score between 0-100
+            final_score = max(0, min(base_score, 100))  # Keep score between 0-100
+            logging.debug(f"Final compatibility score: {final_score}")
+            return final_score
 
         except Exception as e:
             logging.error(f"Error calculating compatibility score: {str(e)}")
@@ -239,16 +258,50 @@ class Achievement(db.Model):
     def get_recommendation_reason(self, client):
         """Get a personalized reason why this achievement is recommended"""
         try:
-            if self.type == 'workout_streak':
-                return "Based on your consistent workout pattern, you're on track for this achievement!"
-            elif self.type == 'nutrition' and client.goal == 'weight_loss':
-                return "This achievement aligns perfectly with your weight loss goals."
-            elif self.type == 'strength' and client.goal == 'muscle_gain':
-                return "Great for your muscle gain journey!"
-            elif self.difficulty == 1:
-                return "A great starting achievement for your fitness journey!"
-            else:
-                return "This achievement matches your current fitness level."
+            recent_logs = ProgressLog.query.filter_by(client_id=client.id)\
+                .filter(ProgressLog.log_date >= datetime.utcnow() - timedelta(days=30))\
+                .all()
+
+            activity_count = len(recent_logs)
+            completion_rate = sum(1 for log in recent_logs if log.workout_completed) / max(1, activity_count)
+
+            # Dynamic reason based on multiple factors
+            reasons = []
+
+            # Match with client's goal
+            if self.type == client.goal:
+                reasons.append("Perfectly aligned with your fitness goals")
+
+            # Activity level based reason
+            if activity_count >= 12:
+                reasons.append("You're consistently active")
+            elif activity_count >= 8:
+                reasons.append("You're building a good workout routine")
+            elif activity_count >= 4:
+                reasons.append("Great for maintaining your progress")
+
+            # Completion rate based reason
+            if completion_rate >= 0.8:
+                reasons.append("You're excellent at completing workouts")
+            elif completion_rate >= 0.6:
+                reasons.append("You're committed to your training")
+
+            # Difficulty level based reason
+            level_mapping = {'beginner': 1, 'intermediate': 2, 'advanced': 3}
+            client_level = level_mapping.get(client.fitness_level, 1)
+
+            if self.difficulty == client_level:
+                reasons.append("Matches your current fitness level")
+            elif self.difficulty == client_level + 1:
+                reasons.append("A good challenge for your next step")
+            elif self.difficulty < client_level:
+                reasons.append("A quick win to boost your momentum")
+
+            # Select the most relevant reason
+            if reasons:
+                return reasons[0]
+
+            return "Recommended based on your profile"
 
         except Exception as e:
             logging.error(f"Error getting recommendation reason: {str(e)}")

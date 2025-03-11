@@ -455,6 +455,7 @@ def submit_fitness_quiz():
             # Create a new client if none exists
             client = Client(
                 name=data.get('name', 'New Client'),
+                trainer_id=1,  # Set a default trainer ID for now
                 fitness_level=data.get('fitnessLevel'),
                 goal=data.get('primaryGoal')
             )
@@ -839,7 +840,7 @@ def find_ingredient_substitutes():
             return jsonify({'error': 'Ingredient name is required'}), 400
 
         # Get client preferences and allergies
-        client = Client.query.get_or_404(client_id) if client_id else None
+        client= Client.query.get_or_404(client_id) if client_id else None
         preferences = {
             'diet_type': client.diet_preference if client else None,
             'budget_conscious': bool(budget_limit),

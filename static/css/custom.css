@@ -259,3 +259,56 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 .bg-gradient {
     background: var(--gradient-primary);
 }
+
+/* Tutorial Overlay Styles */
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    pointer-events: none;
+}
+
+.tutorial-tooltip {
+    position: fixed;
+    background: var(--fitfuel-dark-accent);
+    border: 1px solid var(--fitfuel-orange);
+    border-radius: 12px;
+    padding: 1.5rem;
+    max-width: 350px;
+    z-index: 1050;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.tutorial-content {
+    color: var(--fitfuel-light);
+}
+
+.tutorial-title {
+    color: var(--fitfuel-orange);
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+}
+
+.tutorial-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+}
+
+.tutorial-navigation {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.tutorial-highlight {
+    position: relative;
+    z-index: 1045;
+    box-shadow: 0 0 0 4px var(--fitfuel-orange);
+    border-radius: 8px;
+    pointer-events: auto;
+}

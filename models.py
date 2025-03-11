@@ -27,6 +27,7 @@ class Client(db.Model):
     activities = db.relationship('ActivityFeed', backref='client', lazy=True)
     goals = db.relationship('Goal', backref='client', lazy=True)  # Added goals relationship
     points = db.Column(db.Integer, default=0)  # Total achievement points
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Added created_at field
 
 class ActivityFeed(db.Model):
     id = db.Column(db.Integer, primary_key=True)

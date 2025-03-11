@@ -849,21 +849,27 @@ def calculate_achievement_progress(client, achievement):
 @app.route('/client/<int:client_id>/generate-report')
 def generate_client_report(client_id):
     try:
+        logging.info(f"Starting report generation for client {client_id}")
         client = Client.query.get_or_404(client_id)
+        logging.debug(f"Client found: {client.name}, created_at: {client.created_at}")
 
         # Get client's achievements
         achievements = ClientAchievement.query.filter_by(client_id=client_id).all()
+        logging.debug(f"Found {len(achievements)} achievements")
 
         # Get progress logs
         progress_logs = ProgressLog.query.filter_by(client_id=client_id)\
             .order_by(ProgressLog.log_date.desc()).all()
+        logging.debug(f"Found {len(progress_logs)} progress logs")
 
         # Get goals
         goals = Goal.query.filter_by(client_id=client_id).all()
+        logging.debug(f"Found {len(goals)} goals")
 
         # Generate PDF report
         from utils.report_generator import generate_client_report
         pdf_buffer = generate_client_report(client, achievements, progress_logs, goals)
+        logging.info("PDF report generated successfully")
 
         # Create the response
         return send_file(
@@ -875,7 +881,7 @@ def generate_client_report(client_id):
 
     except Exception as e:
         logging.error(f"Error generating client report: {str(e)}")
-        flash('Error generating report. Please try again.', 'danger')
+        flash('Error generating report. Pleasetry again.', 'danger')
         return redirect(url_for('view_progress', client_id=client_id))
 
 if __name__ == '__main__':

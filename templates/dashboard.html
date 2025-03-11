@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
         editClientModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
             const clientId = button.getAttribute('data-client-id');
-            
+
             // Fetch client data and populate form
             fetch(`/api/client/${clientId}`)
                 .then(response => response.json())
@@ -219,10 +219,13 @@ document.addEventListener('DOMContentLoaded', function() {
 function updateClient() {
     const form = document.getElementById('editClientForm');
     const clientId = document.getElementById('clientId').value;
-    
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
-    
+
+    const data = {
+        name: document.getElementById('clientName').value,
+        goal: document.getElementById('clientGoal').value,
+        fitness_level: document.getElementById('clientFitnessLevel').value
+    };
+
     fetch(`/api/client/${clientId}`, {
         method: 'PUT',
         headers: {
@@ -233,9 +236,13 @@ function updateClient() {
     .then(response => response.json())
     .then(result => {
         if (result.success) {
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editClientModal'));
+            modal.hide();
+            // Reload the page to show updated data
             location.reload();
         } else {
-            alert('Error updating client');
+            alert(result.error || 'Error updating client');
         }
     })
     .catch(error => {

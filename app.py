@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from utils import workout_generator, meal_generator, pdf_generator, progression_tracker, meal_substitution
 from models import (
     db, Trainer, Client, Plan, ProgressLog, ExerciseProgression,
-    MealIngredient, SubstitutionRule
+    MealIngredient, SubstitutionRule, DietaryPreference, MealPlan # Added new models
 )
 from datetime import datetime, timedelta
 
@@ -373,7 +373,83 @@ def update_client(client_id):
         logging.error(f"Error updating client: {str(e)}")
         return jsonify({'error': 'Failed to update client'}), 500
 
-# Add this new route after the existing routes
+# Add these new routes after the existing routes
+
+@app.route('/meal-planner')
+def meal_planner_wizard():
+    diet_descriptions = {
+        'Standard': 'A balanced diet with all food groups',
+        'Vegetarian': 'Plant-based diet that includes dairy and eggs',
+        'Vegan': 'Entirely plant-based diet',
+        'Keto': 'High-fat, low-carb diet',
+        'Paleo': 'Based on whole foods and lean proteins',
+        'Mediterranean': 'Rich in vegetables, olive oil, and lean proteins'
+    }
+    return render_template('meal_planner_wizard.html', diet_descriptions=diet_descriptions)
+
+@app.route('/api/meal-planner/preferences', methods=['POST'])
+def save_meal_preferences():
+    try:
+        data = request.get_json()
+
+        # Create new dietary preference
+        preference = DietaryPreference(
+            client_id=session.get('client_id'),  # You'll need to implement client session management
+            diet_type=data.get('dietType'),
+            excluded_ingredients=data.get('excludedIngredients', '').split(','),
+            preferred_ingredients=data.get('preferredIngredients', '').split(','),
+            meal_size_preference=data.get('mealSize'),
+            meal_count_per_day=int(data.get('mealCount')),
+            calorie_target=int(data.get('calorieTarget')),
+            macro_targets={},  # You can add macro calculations based on diet type
+            meal_timing={}  # You can format meal timing data here
+        )
+
+        db.session.add(preference)
+
+        # Create meal plan
+        start_date = datetime.strptime(data.get('startDate'), '%Y-%m-%d').date()
+        duration_weeks = int(data.get('duration'))
+        end_date = start_date + timedelta(weeks=duration_weeks)
+
+        meal_plan = MealPlan(
+            client_id=session.get('client_id'),
+            start_date=start_date,
+            end_date=end_date,
+            daily_plans={},  # This will be populated by the meal planning algorithm
+            shopping_list={},
+            status='pending'
+        )
+
+        db.session.add(meal_plan)
+        db.session.commit()
+
+        return jsonify({'success': True, 'meal_plan_id': meal_plan.id})
+
+    except Exception as e:
+        logging.error(f"Error saving meal preferences: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to save preferences'}), 500
+
+@app.route('/meal-plan')
+def view_meal_plan():
+    try:
+        # Get the latest meal plan for the client
+        meal_plan = MealPlan.query.filter_by(
+            client_id=session.get('client_id'),
+            status='active'
+        ).order_by(MealPlan.created_at.desc()).first()
+
+        if not meal_plan:
+            flash('No active meal plan found.', 'warning')
+            return redirect(url_for('meal_planner_wizard'))
+
+        return render_template('meal_plan.html', meal_plan=meal_plan)
+
+    except Exception as e:
+        logging.error(f"Error viewing meal plan: {str(e)}")
+        flash('Error loading meal plan. Please try again.', 'danger')
+        return redirect(url_for('index'))
 
 @app.route('/meal-substitutions')
 def meal_substitutions():

@@ -1,0 +1,381 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">Meal Planner Wizard</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Wizard Progress -->
+                    <div class="progress mb-4" style="height: 3px;">
+                        <div class="progress-bar" role="progressbar" id="wizardProgress"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="badge rounded-pill text-bg-primary step-indicator active">Diet Type</span>
+                        <span class="badge rounded-pill text-bg-secondary step-indicator">Preferences</span>
+                        <span class="badge rounded-pill text-bg-secondary step-indicator">Restrictions</span>
+                        <span class="badge rounded-pill text-bg-secondary step-indicator">Schedule</span>
+                        <span class="badge rounded-pill text-bg-secondary step-indicator">Review</span>
+                    </div>
+
+                    <!-- Wizard Forms -->
+                    <form id="mealPlannerForm">
+                        <!-- Step 1: Diet Type -->
+                        <div class="wizard-step" id="step1">
+                            <h4 class="mb-4">Choose Your Diet Type</h4>
+                            <div class="row g-4">
+                                {% for diet in ['Standard', 'Vegetarian', 'Vegan', 'Keto', 'Paleo', 'Mediterranean'] %}
+                                <div class="col-md-4">
+                                    <div class="card h-100 diet-card">
+                                        <div class="card-body">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" 
+                                                       name="dietType" value="{{ diet.lower() }}" 
+                                                       id="diet{{ diet }}">
+                                                <label class="form-check-label" for="diet{{ diet }}">
+                                                    <h5 class="mb-3">{{ diet }}</h5>
+                                                    <p class="text-muted mb-0">
+                                                        {{ diet_descriptions[diet] }}
+                                                    </p>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Preferences -->
+                        <div class="wizard-step d-none" id="step2">
+                            <h4 class="mb-4">Food Preferences</h4>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Meal Size Preference</label>
+                                        <select class="form-select" name="mealSize">
+                                            <option value="small">Small portions</option>
+                                            <option value="medium" selected>Medium portions</option>
+                                            <option value="large">Large portions</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Meals per Day</label>
+                                        <select class="form-select" name="mealCount">
+                                            <option value="3">3 meals</option>
+                                            <option value="4">4 meals</option>
+                                            <option value="5">5 meals</option>
+                                            <option value="6">6 meals</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Daily Calorie Target</label>
+                                        <input type="number" class="form-control" name="calorieTarget"
+                                               min="1200" max="4000" step="100">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Preferred Ingredients</label>
+                                        <input type="text" class="form-control" name="preferredIngredients"
+                                               placeholder="Enter ingredients you like">
+                                        <small class="text-muted">Separate with commas</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Restrictions -->
+                        <div class="wizard-step d-none" id="step3">
+                            <h4 class="mb-4">Dietary Restrictions</h4>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Allergies & Intolerances</label>
+                                        <div class="common-allergens">
+                                            {% for allergen in ['Dairy', 'Nuts', 'Eggs', 'Soy', 'Gluten', 'Shellfish'] %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="allergens" value="{{ allergen.lower() }}"
+                                                       id="allergen{{ allergen }}">
+                                                <label class="form-check-label" for="allergen{{ allergen }}">
+                                                    {{ allergen }}
+                                                </label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Excluded Ingredients</label>
+                                        <input type="text" class="form-control" name="excludedIngredients"
+                                               placeholder="Enter ingredients to avoid">
+                                        <small class="text-muted">Separate with commas</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Schedule -->
+                        <div class="wizard-step d-none" id="step4">
+                            <h4 class="mb-4">Meal Schedule</h4>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Plan Start Date</label>
+                                        <input type="date" class="form-control" name="startDate" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Plan Duration (weeks)</label>
+                                        <select class="form-select" name="duration">
+                                            <option value="1">1 week</option>
+                                            <option value="2">2 weeks</option>
+                                            <option value="4">4 weeks</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Preferred Meal Times</label>
+                                        <div id="mealTimesContainer">
+                                            <!-- Meal times will be added dynamically based on meal count -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 5: Review -->
+                        <div class="wizard-step d-none" id="step5">
+                            <h4 class="mb-4">Review Your Preferences</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Diet Type</h5>
+                                            <p id="reviewDietType" class="mb-0"></p>
+                                        </div>
+                                    </div>
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Meal Preferences</h5>
+                                            <ul id="reviewPreferences" class="list-unstyled mb-0"></ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Restrictions</h5>
+                                            <ul id="reviewRestrictions" class="list-unstyled mb-0"></ul>
+                                        </div>
+                                    </div>
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Schedule</h5>
+                                            <ul id="reviewSchedule" class="list-unstyled mb-0"></ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">
+                                <i data-feather="arrow-left" class="me-2"></i>Previous
+                            </button>
+                            <button type="button" class="btn btn-primary" id="nextBtn">
+                                Next<i data-feather="arrow-right" class="ms-2"></i>
+                            </button>
+                            <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">
+                                Create Meal Plan<i data-feather="check" class="ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('mealPlannerForm');
+    const steps = document.querySelectorAll('.wizard-step');
+    const progress = document.getElementById('wizardProgress');
+    const indicators = document.querySelectorAll('.step-indicator');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    let currentStep = 0;
+    const totalSteps = steps.length;
+
+    // Update progress bar and step indicators
+    function updateProgress() {
+        const percent = ((currentStep + 1) / totalSteps) * 100;
+        progress.style.width = `${percent}%`;
+        
+        indicators.forEach((indicator, index) => {
+            if (index === currentStep) {
+                indicator.classList.add('text-bg-primary');
+                indicator.classList.remove('text-bg-secondary');
+            } else {
+                indicator.classList.add('text-bg-secondary');
+                indicator.classList.remove('text-bg-primary');
+            }
+        });
+
+        // Show/hide navigation buttons
+        prevBtn.style.display = currentStep > 0 ? 'block' : 'none';
+        nextBtn.style.display = currentStep < totalSteps - 1 ? 'block' : 'none';
+        submitBtn.style.display = currentStep === totalSteps - 1 ? 'block' : 'none';
+    }
+
+    // Show current step
+    function showStep(step) {
+        steps.forEach((s, index) => {
+            if (index === step) {
+                s.classList.remove('d-none');
+            } else {
+                s.classList.add('d-none');
+            }
+        });
+        updateProgress();
+    }
+
+    // Navigation handlers
+    prevBtn.addEventListener('click', () => {
+        if (currentStep > 0) {
+            currentStep--;
+            showStep(currentStep);
+        }
+    });
+
+    nextBtn.addEventListener('click', () => {
+        if (validateStep(currentStep)) {
+            if (currentStep < totalSteps - 1) {
+                currentStep++;
+                showStep(currentStep);
+                if (currentStep === totalSteps - 1) {
+                    populateReview();
+                }
+            }
+        }
+    });
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (validateStep(currentStep)) {
+            const formData = new FormData(form);
+            const preferences = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/api/meal-planner/preferences', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(preferences)
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/meal-plan';
+                } else {
+                    throw new Error('Failed to save preferences');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error saving preferences. Please try again.');
+            }
+        }
+    });
+
+    // Validation for each step
+    function validateStep(step) {
+        switch(step) {
+            case 0:
+                return validateDietType();
+            case 1:
+                return validatePreferences();
+            case 2:
+                return validateRestrictions();
+            case 3:
+                return validateSchedule();
+            case 4:
+                return true; // Review step
+            default:
+                return false;
+        }
+    }
+
+    // Step-specific validation functions
+    function validateDietType() {
+        const dietType = form.querySelector('input[name="dietType"]:checked');
+        if (!dietType) {
+            alert('Please select a diet type');
+            return false;
+        }
+        return true;
+    }
+
+    function validatePreferences() {
+        const calorieTarget = form.querySelector('input[name="calorieTarget"]').value;
+        if (!calorieTarget || calorieTarget < 1200 || calorieTarget > 4000) {
+            alert('Please enter a valid calorie target between 1200 and 4000');
+            return false;
+        }
+        return true;
+    }
+
+    function validateRestrictions() {
+        return true; // Optional fields
+    }
+
+    function validateSchedule() {
+        const startDate = form.querySelector('input[name="startDate"]').value;
+        if (!startDate) {
+            alert('Please select a start date');
+            return false;
+        }
+        return true;
+    }
+
+    // Populate review step
+    function populateReview() {
+        const formData = new FormData(form);
+        document.getElementById('reviewDietType').textContent = 
+            formData.get('dietType').charAt(0).toUpperCase() + formData.get('dietType').slice(1);
+        
+        document.getElementById('reviewPreferences').innerHTML = `
+            <li>Meal Size: ${formData.get('mealSize')}</li>
+            <li>Meals per Day: ${formData.get('mealCount')}</li>
+            <li>Calorie Target: ${formData.get('calorieTarget')} kcal</li>
+            <li>Preferred Ingredients: ${formData.get('preferredIngredients') || 'None specified'}</li>
+        `;
+
+        const allergens = Array.from(formData.getAll('allergens'));
+        document.getElementById('reviewRestrictions').innerHTML = `
+            <li>Allergies: ${allergens.length ? allergens.join(', ') : 'None'}</li>
+            <li>Excluded Ingredients: ${formData.get('excludedIngredients') || 'None'}</li>
+        `;
+
+        document.getElementById('reviewSchedule').innerHTML = `
+            <li>Start Date: ${formData.get('startDate')}</li>
+            <li>Duration: ${formData.get('duration')} week(s)</li>
+        `;
+    }
+
+    // Initialize wizard
+    showStep(currentStep);
+});
+</script>
+{% endblock %}

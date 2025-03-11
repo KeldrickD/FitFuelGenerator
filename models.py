@@ -24,6 +24,8 @@ class Client(db.Model):
     plans = db.relationship('Plan', backref='client', lazy=True)
     progress_logs = db.relationship('ProgressLog', backref='client', lazy=True)
     allergies = db.Column(db.JSON, default=list)  # Store allergies as a list
+    dietary_preferences = db.relationship('DietaryPreference', backref='client', lazy=True)
+    meal_plans = db.relationship('MealPlan', backref='client', lazy=True)
 
 class Plan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -76,3 +78,27 @@ class SubstitutionRule(db.Model):
     nutrition_difference = db.Column(db.JSON)  # Difference in key nutrients
     cost_difference = db.Column(db.Float)  # Price difference per serving
     suitability_score = db.Column(db.Float)  # AI-calculated score for substitution
+
+class DietaryPreference(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    diet_type = db.Column(db.String(50))  # e.g., vegan, keto, paleo
+    excluded_ingredients = db.Column(db.JSON, default=list)
+    preferred_ingredients = db.Column(db.JSON, default=list)
+    meal_size_preference = db.Column(db.String(20))  # small, medium, large
+    meal_count_per_day = db.Column(db.Integer)
+    calorie_target = db.Column(db.Integer)
+    macro_targets = db.Column(db.JSON)  # Store macronutrient targets
+    meal_timing = db.Column(db.JSON)  # Store preferred meal times
+
+class MealPlan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    daily_plans = db.Column(db.JSON)  # Store daily meal plans
+    shopping_list = db.Column(db.JSON)  # Store required ingredients
+    notes = db.Column(db.Text)
+    status = db.Column(db.String(20), default='active')

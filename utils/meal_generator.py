@@ -49,34 +49,34 @@ def create_meal_plan(diet_preference: str, weekly_budget: float) -> Dict:
     try:
         # Select meal options based on diet preference
         diet_meals = meal_options.get(diet_preference, meal_options['high_protein'])
-        
-        # Create weekly meal plan
+
+        # Create weekly meal plan with correct order
         meal_plan = {}
         current_month = datetime.now().month
         is_summer = 4 <= current_month <= 9
-        
+
         for day in range(1, 8):
+            # Ensure consistent meal order
             daily_meals = {
                 'breakfast': get_seasonal_meal(diet_meals['breakfast'], is_summer),
                 'lunch': get_seasonal_meal(diet_meals['lunch'], is_summer),
                 'dinner': get_seasonal_meal(diet_meals['dinner'], is_summer)
             }
-            
+
             # Calculate daily cost
             daily_cost = sum(meal['cost'] for meal in daily_meals.values())
-            
+
             if daily_cost > daily_budget:
-                # Adjust meals to fit budget
                 daily_meals = adjust_meals_for_budget(daily_meals, daily_budget)
-            
+
             meal_plan[f"Day {day}"] = {
                 'meals': daily_meals,
                 'total_cost': sum(meal['cost'] for meal in daily_meals.values()),
                 'substitutions': get_substitutions(daily_meals)
             }
-        
+
         return meal_plan
-        
+
     except Exception as e:
         logging.error(f"Error generating meal plan: {str(e)}")
         raise

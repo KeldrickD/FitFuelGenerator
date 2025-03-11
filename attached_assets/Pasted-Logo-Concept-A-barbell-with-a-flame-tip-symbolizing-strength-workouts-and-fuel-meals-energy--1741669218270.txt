@@ -1,0 +1,127 @@
+Logo
+Concept: A barbell with a flame tip—symbolizing strength (workouts) and fuel (meals/energy).
+Barbell: Sleek, minimalist—represents fitness and trainers’ tools.
+
+Flame: Sharp, upward—hints at power, progress, and fueling goals.
+
+Style: Flat or subtle gradient, no overdone 3D effects—modern and versatile.
+
+Text: “FitFuel” in a bold, condensed font (see Typography below).
+
+Placement: Flame-barbell left, “FitFuel” right—or stacked for mobile.
+
+Variants: 
+Full logo for headers/PDFs.
+
+Flame-barbell icon standalone for app favicon or small branding.
+
+
+2. Color Scheme
+Primary: Fiery Orange (#FF4500)  
+Why: Energy, power, fuel—grabs attention, ties to the flame.
+
+Use: Buttons, logo flame, highlights (e.g., “Generate Plan” CTA).
+
+Secondary: Steel Gray (#4A4A4A)  
+Why: Strength, stability, pro vibe—grounds the boldness.
+
+Use: Backgrounds, text, barbell in logo.
+
+Accent: Crisp White (#FFFFFF)  
+Why: Clean, modern—keeps it readable and sharp.
+
+Use: Base background, contrast text.
+
+Optional Pop: Lime Green (#32CD32)  
+Why: Fresh, winning energy—nods to health and results.
+
+Use: Subtle accents (e.g., checkmarks, progress bars).
+
+Palette:
+Orange (#FF4500): Power, action.
+
+Gray (#4A4A4A): Pro, reliable.
+
+White (#FFFFFF): Simple, clear.
+
+Green (#32CD32): Success, optional flair.
+
+3. Typography
+Primary Font: Montserrat (Bold)  
+Why: Clean, modern, strong—perfect for headers and branding.
+
+Use: Logo (“FitFuel”), titles (e.g., “Client Plan”), buttons.
+
+Source: Free on Google Fonts.
+
+Secondary Font: Open Sans (Regular)  
+Why: Readable, friendly—balances the bold primary.
+
+Use: Body text (e.g., plan details), labels, instructions.
+
+Source: Free on Google Fonts.
+
+Style Notes:
+Headers: Montserrat Bold, 24-36px, orange or gray.
+
+Body: Open Sans Regular, 14-16px, gray on white.
+
+Avoid: Script or overly quirky fonts—keep it pro.
+
+4. UI Layout (Web/App)
+Homepage (FitFuelTrainer.com):
+Header: 
+Logo (flame-barbell + “FitFuel”) left, orange on white.
+
+Tagline below: “Power Client Wins with Workouts + Meals” (Montserrat Bold, gray).
+
+CTA: “Start Free” button (orange, white text, rounded corners).
+
+Hero Section: 
+Background: Subtle gray gradient or stock photo (trainer lifting weights).
+
+Text: “AI Plans for Trainers—Fast, Branded, Budget-Smart” (Montserrat Bold, white with gray outline).
+
+Input teaser: Mini form (e.g., “Goal: Lose Weight, Budget: $40”) with “Preview Plan” button.
+
+Footer: 
+Simple gray bar: “© 2025 FitFuel” + links (About, Contact), white text.
+
+App Interface:
+Input Screen: 
+White background, gray borders.
+
+Form fields stacked vertically (e.g., “Goal,” “Level,” “Budget”)—Open Sans, gray labels.
+
+Orange “Generate Plan” button at bottom (Montserrat Bold, white text).
+
+Output Screen: 
+White base, gray section headers (e.g., “Workout,” “Meals”).
+
+Plan text in Open Sans, orange accents (e.g., “Week 1” in orange).
+
+Branded header: “Coach Mike’s Plan” (Montserrat Bold, gray) + uploaded logo.
+
+Buttons: “Download PDF” (orange), “Edit” (gray outline).
+
+Mobile: Single-column, thumb-friendly—big buttons, minimal scrolling.
+
+PDF Output:
+Layout: 
+Top: Trainer logo + “FitFuel Plan for [Client]” (Montserrat Bold, gray).
+
+Sections: “Workout” (orange header), “Meals” (orange header), Open Sans body.
+
+Footer: “Powered by FitFuel” (small, gray) + #FitFuelWins.
+
+Style: Clean, 1-2 pages, no clutter—trainers print or email this.
+
+5. Overall Vibe
+Tone: Confident, no-nonsense—trainers trust it to deliver.
+
+Visuals: Minimalist with pops of orange—strength without chaos.
+
+Imagery: If used, stick to trainers in action (lifting, coaching)—stock sites like Unsplash (free) work.
+
+Animation (Optional): Subtle button hover (orange → darker orange) or flame flicker in logo—keep it light for 3-5 day build.
+

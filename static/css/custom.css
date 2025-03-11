@@ -1,4 +1,33 @@
 /* Custom styles for FitFuel */
+:root {
+    /* Brand Colors */
+    --fitfuel-orange: #FF4500;
+    --fitfuel-gray: #4A4A4A;
+    --fitfuel-green: #32CD32;
+}
+
+/* Typography */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&display=swap');
+
+h1, h2, h3, h4, h5, h6, .navbar-brand {
+    font-family: 'Montserrat', var(--bs-font-sans-serif);
+    font-weight: 700;
+}
+
+body {
+    font-family: 'Open Sans', var(--bs-font-sans-serif);
+}
+
+/* Navbar Styling */
+.navbar {
+    background-color: var(--bs-dark) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    color: var(--fitfuel-orange) !important;
+    font-size: 1.5rem;
+}
 
 /* General Layout */
 .preview-container {
@@ -10,22 +39,127 @@
 /* Card Styles */
 .card {
     border: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
+    background-color: var(--bs-dark);
 }
 
 .card-header {
     background-color: var(--bs-dark);
     border-bottom: 1px solid var(--bs-border-color);
-    padding: 1rem;
+    padding: 1.25rem;
 }
 
 .card-title {
-    color: var(--bs-light);
+    color: var(--fitfuel-orange);
     margin: 0;
 }
 
+/* Button Styles */
+.btn-primary {
+    background-color: var(--fitfuel-orange);
+    border-color: var(--fitfuel-orange);
+    padding: 0.5rem 1.25rem;
+    font-family: 'Montserrat', var(--bs-font-sans-serif);
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background-color: #E63E00;
+    border-color: #E63E00;
+}
+
 /* Table Styles */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-family: 'Montserrat', var(--bs-font-sans-serif);
+    font-weight: 600;
+    color: var(--fitfuel-orange);
+}
+
+/* Success Indicators */
+.success-text {
+    color: var(--fitfuel-green);
+}
+
+/* Form Styling */
+.form-label {
+    font-family: 'Montserrat', var(--bs-font-sans-serif);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-border-color);
+    color: var(--bs-light);
+    padding: 0.75rem;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--bs-dark);
+    border-color: var(--fitfuel-orange);
+    box-shadow: 0 0 0 0.25rem rgba(255, 69, 0, 0.25);
+}
+
+/* Plan Preview Sections */
+.workout-day, .meal-day {
+    border-bottom: 1px solid var(--bs-border-color);
+    padding: 1.5rem 0;
+    margin-bottom: 1rem;
+}
+
+.workout-day:last-child, .meal-day:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+/* Motivation and Progress Elements */
+.motivation-note {
+    color: var(--fitfuel-orange);
+    font-style: italic;
+    margin-top: 1rem;
+}
+
+.progression-note {
+    color: var(--fitfuel-green);
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* Icon Styling */
+.feather {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+
+/* Footer */
+.footer {
+    background-color: var(--bs-dark);
+    border-top: 1px solid var(--bs-border-color);
+    padding: 2rem 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .preview-container {
+        padding: 10px;
+    }
+
+    .table-responsive {
+        margin-bottom: 1rem;
+    }
+}
+
+/*Table Styles - from original*/
 .table {
     margin-bottom: 0;
 }
@@ -39,7 +173,7 @@
     vertical-align: middle;
 }
 
-/* Icon Styles */
+/*Icon Styles - from original*/
 .feather {
     width: 18px;
     height: 18px;
@@ -54,7 +188,7 @@
     height: 14px;
 }
 
-/* Workout and Meal Plan Specific Styles */
+/*Workout and Meal Plan Specific Styles - from original*/
 .workout-day, .meal-day {
     border-bottom: 1px solid var(--bs-border-color);
     padding-bottom: 1rem;
@@ -77,12 +211,12 @@
     padding: 5px 0;
 }
 
-/* Tooltip Styles */
+/* Tooltip Styles - from original*/
 .substitutions-tooltip {
     cursor: pointer;
 }
 
-/* Form Styles */
+/* Form Styles - from original*/
 .form-control, .form-select {
     background-color: var(--bs-dark);
     border-color: var(--bs-border-color);
@@ -96,7 +230,8 @@
     box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
 }
 
-/* Button Styles */
+
+/* Button Styles - from original*/
 .btn-primary {
     padding: 0.5rem 1rem;
     display: inline-flex;
@@ -104,7 +239,7 @@
     gap: 0.5rem;
 }
 
-/* Responsive Adjustments */
+/* Responsive Adjustments - from original*/
 @media (max-width: 768px) {
     .preview-container {
         padding: 10px;

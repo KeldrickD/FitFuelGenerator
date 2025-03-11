@@ -771,6 +771,9 @@ def view_achievements(client_id):
         achievements = Achievement.query.all()
         client_achievements = ClientAchievement.query.filter_by(client_id=client_id).all()
 
+        # Get personalized recommendations
+        recommended_achievements = Achievement.get_recommendations(client_id)
+
         # Create achievement progress map
         progress_map = {
             ca.achievement_id: {
@@ -785,7 +788,8 @@ def view_achievements(client_id):
             'achievements.html',
             client=client,
             achievements=achievements,
-            progress_map=progress_map
+            progress_map=progress_map,
+            recommended_achievements=recommended_achievements
         )
 
     except Exception as e:

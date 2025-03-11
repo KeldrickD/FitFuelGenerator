@@ -29,6 +29,45 @@
         </div>
     </div>
 
+    <!-- Recommended Achievements -->
+    {% if recommended_achievements %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i data-feather="star" class="me-2"></i>Recommended For You
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for recommendation in recommended_achievements %}
+                        <div class="col-md-4">
+                            <div class="achievement-card p-3 border rounded h-100">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="achievement-icon me-3">
+                                        <i data-feather="{{ recommendation.achievement.icon }}" class="text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-1">{{ recommendation.achievement.name }}</h5>
+                                        <span class="badge bg-primary">{{ recommendation.score }}% Match</span>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-2">{{ recommendation.achievement.description }}</p>
+                                <p class="small text-primary mb-0">
+                                    <i data-feather="info" class="feather-small me-1"></i>
+                                    {{ recommendation.reason }}
+                                </p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Achievement Categories -->
     <div class="row g-4">
         {% for category in ['workout', 'nutrition', 'goals'] %}
@@ -116,6 +155,15 @@
 .feather-small {
     width: 16px;
     height: 16px;
+}
+
+.achievement-card {
+    background-color: var(--bs-secondary-bg);
+    transition: transform 0.2s;
+}
+
+.achievement-card:hover {
+    transform: translateY(-2px);
 }
 </style>
 {% endblock %}

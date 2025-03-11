@@ -1,6 +1,7 @@
-from datetime import datetime
-from sqlalchemy import or_
+from datetime import datetime, timedelta
+from sqlalchemy import or_, func, desc
 from app import db
+import logging
 
 class Trainer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -156,6 +157,102 @@ class Achievement(db.Model):
     level = db.Column(db.String(20))  # bronze, silver, gold
     points = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    difficulty = db.Column(db.Integer, default=1)  # 1-5 scale
+
+    @classmethod
+    def get_recommendations(cls, client_id, limit=3):
+        """Get personalized achievement recommendations for a client"""
+        try:
+            # Get client info
+            client = Client.query.get(client_id)
+            if not client:
+                return []
+
+            # Get client's current achievements
+            completed_achievements = {
+                ca.achievement_id: ca.progress 
+                for ca in ClientAchievement.query.filter_by(client_id=client_id).all()
+            }
+
+            # Get all available achievements
+            all_achievements = cls.query.all()
+            recommendations = []
+
+            for achievement in all_achievements:
+                if achievement.id not in completed_achievements:
+                    # Calculate recommendation score
+                    score = achievement.calculate_compatibility_score(client)
+                    if score > 0:
+                        recommendations.append({
+                            'achievement': achievement,
+                            'score': score,
+                            'reason': achievement.get_recommendation_reason(client)
+                        })
+
+            # Sort by score and return top recommendations
+            recommendations.sort(key=lambda x: x['score'], reverse=True)
+            return recommendations[:limit]
+
+        except Exception as e:
+            logging.error(f"Error getting achievement recommendations: {str(e)}")
+            return []
+
+    def calculate_compatibility_score(self, client):
+        """Calculate how compatible this achievement is for the client"""
+        try:
+            base_score = 100
+
+            # Adjust score based on client's fitness level
+            level_mapping = {'beginner': 1, 'intermediate': 2, 'advanced': 3}
+            client_level = level_mapping.get(client.fitness_level, 1)
+            level_diff = abs(client_level - self.difficulty)
+            base_score -= level_diff * 10
+
+            # Check if achievement type matches client's goal
+            if self.type == 'workout_streak' and client.goal == 'consistency':
+                base_score += 20
+            elif self.type == 'strength' and client.goal == 'muscle_gain':
+                base_score += 20
+            elif self.type == 'nutrition' and client.goal == 'weight_loss':
+                base_score += 20
+
+            # Analyze recent activity patterns
+            recent_logs = ProgressLog.query.filter_by(client_id=client.id)\
+                .filter(ProgressLog.log_date >= datetime.utcnow() - timedelta(days=30))\
+                .order_by(desc(ProgressLog.log_date)).all()
+
+            if recent_logs:
+                # Increase score if client has been active recently
+                if len(recent_logs) >= 12:  # Active in last month
+                    base_score += 15
+
+                # Check workout completion rate
+                completion_rate = sum(1 for log in recent_logs if log.workout_completed) / len(recent_logs)
+                base_score += int(completion_rate * 10)
+
+            return max(0, min(base_score, 100))  # Keep score between 0-100
+
+        except Exception as e:
+            logging.error(f"Error calculating compatibility score: {str(e)}")
+            return 0
+
+    def get_recommendation_reason(self, client):
+        """Get a personalized reason why this achievement is recommended"""
+        try:
+            if self.type == 'workout_streak':
+                return "Based on your consistent workout pattern, you're on track for this achievement!"
+            elif self.type == 'nutrition' and client.goal == 'weight_loss':
+                return "This achievement aligns perfectly with your weight loss goals."
+            elif self.type == 'strength' and client.goal == 'muscle_gain':
+                return "Great for your muscle gain journey!"
+            elif self.difficulty == 1:
+                return "A great starting achievement for your fitness journey!"
+            else:
+                return "This achievement matches your current fitness level."
+
+        except Exception as e:
+            logging.error(f"Error getting recommendation reason: {str(e)}")
+            return "Recommended based on your profile"
 
 class ClientAchievement(db.Model):
     id = db.Column(db.Integer, primary_key=True)

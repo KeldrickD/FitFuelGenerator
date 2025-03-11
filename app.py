@@ -1,34 +1,51 @@
 import os
 import logging
 from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
 from werkzeug.security import generate_password_hash, check_password_hash
-from utils import workout_generator, meal_generator, pdf_generator, progression_tracker, meal_substitution
-from models import (
-    db, Trainer, Client, Plan, ProgressLog, ExerciseProgression,
-    MealIngredient, SubstitutionRule, DietaryPreference, MealPlan, ActivityFeed, Goal, GoalMilestone # Added new models
-)
 from datetime import datetime, timedelta
 
-# Add this helper function at the top of the file after imports
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+# create the app
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET")
+
+# configure the database, relative to the app instance folder
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
+# initialize the app with the extension, flask-sqlalchemy >= 3.0.x
+db.init_app(app)
+
+with app.app_context():
+    # Make sure to import the models here or their tables won't be created
+    from models import (
+        Trainer, Client, Plan, ProgressLog, ExerciseProgression,
+        MealIngredient, SubstitutionRule, DietaryPreference, MealPlan,
+        ActivityFeed, Goal, GoalMilestone
+    )
+    db.create_all()
+
+# Add utility function
 def log_activity(client_id, activity_type, description, icon=None, priority='normal', is_milestone=False, extra_data=None):
     """
     Log a new activity in the activity feed.
-
-    Args:
-        client_id: ID of the client
-        activity_type: Type of activity (workout, meal, goal, etc.)
-        description: Description of the activity
-        icon: Feather icon name (optional)
-        priority: Priority level (high, normal, low)
-        is_milestone: Whether this activity represents a milestone
-        extra_data: Additional activity-specific data
     """
     try:
         activity = ActivityFeed(
             client_id=client_id,
             activity_type=activity_type,
             description=description,
-            icon=icon or activity_type,  # Use activity type as default icon
+            icon=icon or activity_type,
             priority=priority,
             is_milestone=is_milestone,
             extra_data=extra_data or {}
@@ -39,21 +56,6 @@ def log_activity(client_id, activity_type, description, icon=None, priority='nor
     except Exception as e:
         logging.error(f"Error logging activity: {str(e)}")
         db.session.rollback()
-
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-
-app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
-
-# Configure SQLite database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///fitfuel.db")
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-}
-db.init_app(app)
 
 @app.route('/')
 def index():
@@ -668,5 +670,5 @@ def list_ingredients():
         logging.error(f"Error listing ingredients: {str(e)}")
         return jsonify({'error': 'Failed to list ingredients'}), 500
 
-with app.app_context():
-    db.create_all()
+if __name__ == '__main__':
+    app.run(debug=True)

@@ -1,9 +1,6 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from sqlalchemy import or_
-
-# Create db instance
-db = SQLAlchemy()
+from app import db
 
 class Trainer(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -7,9 +7,15 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="card-title mb-0">Progress Overview for {{ client.name }}</h2>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#logProgressModal">
-                        <i data-feather="plus" class="me-2"></i>Log Progress
-                    </button>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('generate_client_report', client_id=client.id) }}" 
+                           class="btn btn-success">
+                            <i data-feather="file-text" class="me-2"></i>Download Report
+                        </a>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#logProgressModal">
+                            <i data-feather="plus" class="me-2"></i>Log Progress
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <!-- Progress Summary -->
@@ -72,7 +78,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- AI Recommendations -->
                     <div class="mt-4">
                         <h3 class="mb-3">AI Insights & Recommendations</h3>
@@ -88,7 +94,7 @@
                             {% endfor %}
                         </div>
                     </div>
-
+                    
                     <!-- Exercise Progression Details -->
                     <div class="mt-4">
                         <h3 class="mb-3">Exercise Progression</h3>

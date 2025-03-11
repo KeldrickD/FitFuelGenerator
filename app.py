@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -844,6 +844,38 @@ def calculate_achievement_progress(client, achievement):
     except Exception as e:
         logging.error(f"Error calculating achievement progress: {str(e)}")
         return 0
+
+@app.route('/client/<int:client_id>/generate-report')
+def generate_client_report(client_id):
+    try:
+        client = Client.query.get_or_404(client_id)
+
+        # Get client's achievements
+        achievements = ClientAchievement.query.filter_by(client_id=client_id).all()
+
+        # Get progress logs
+        progress_logs = ProgressLog.query.filter_by(client_id=client_id)\
+            .order_by(ProgressLog.log_date.desc()).all()
+
+        # Get goals
+        goals = Goal.query.filter_by(client_id=client_id).all()
+
+        # Generate PDF report
+        from utils.report_generator import generate_client_report
+        pdf_buffer = generate_client_report(client, achievements, progress_logs, goals)
+
+        # Create the response
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'{client.name}_progress_report.pdf'
+        )
+
+    except Exception as e:
+        logging.error(f"Error generating client report: {str(e)}")
+        flash('Error generating report. Please try again.', 'danger')
+        return redirect(url_for('view_progress', client_id=client_id))
 
 if __name__ == '__main__':
     app.run(debug=True)

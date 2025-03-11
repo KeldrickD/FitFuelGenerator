@@ -1,0 +1,350 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Set Client Goals</h3>
+                </div>
+                <div class="card-body">
+                    <div class="goal-wizard">
+                        <!-- Step Progress -->
+                        <div class="progress-tracker mb-4">
+                            <div class="progress" style="height: 3px;">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="step active" data-step="1">Goal Type</span>
+                                <span class="step" data-step="2">Target Setting</span>
+                                <span class="step" data-step="3">Milestones</span>
+                                <span class="step" data-step="4">Review</span>
+                            </div>
+                        </div>
+
+                        <!-- Goal Type Selection -->
+                        <div class="wizard-step" id="step1">
+                            <h4 class="mb-3">Select Goal Type</h4>
+                            <div class="row g-4">
+                                {% for type in ['weight_loss', 'muscle_gain', 'endurance', 'strength', 'flexibility'] %}
+                                <div class="col-md-6">
+                                    <div class="card h-100 goal-type-card" data-goal-type="{{ type }}">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ type|replace('_', ' ')|title }}</h5>
+                                            <p class="card-text">{{ goal_descriptions[type] }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Target Setting -->
+                        <div class="wizard-step d-none" id="step2">
+                            <h4 class="mb-3">Set Target Goals</h4>
+                            <form id="targetForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Target Value</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="targetValue" required>
+                                        <span class="input-group-text" id="targetUnit">lbs</span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Target Date</label>
+                                    <input type="date" class="form-control" id="targetDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" id="goalDescription" rows="3"></textarea>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Milestones -->
+                        <div class="wizard-step d-none" id="step3">
+                            <h4 class="mb-3">Set Milestones</h4>
+                            <div id="milestones">
+                                <div class="milestone-item mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Value</label>
+                                                        <input type="number" class="form-control milestone-value">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Target Date</label>
+                                                        <input type="date" class="form-control milestone-date">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Description</label>
+                                                        <input type="text" class="form-control milestone-description">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-primary" id="addMilestone">
+                                    <i data-feather="plus"></i> Add Milestone
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Review -->
+                        <div class="wizard-step d-none" id="step4">
+                            <h4 class="mb-3">Review Goal Plan</h4>
+                            <div class="card">
+                                <div class="card-body">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Goal Type</dt>
+                                        <dd class="col-sm-8" id="reviewGoalType"></dd>
+
+                                        <dt class="col-sm-4">Target Value</dt>
+                                        <dd class="col-sm-8" id="reviewTargetValue"></dd>
+
+                                        <dt class="col-sm-4">Target Date</dt>
+                                        <dd class="col-sm-8" id="reviewTargetDate"></dd>
+
+                                        <dt class="col-sm-4">Description</dt>
+                                        <dd class="col-sm-8" id="reviewDescription"></dd>
+                                    </dl>
+
+                                    <h5 class="mt-4">Milestones</h5>
+                                    <div id="reviewMilestones"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Buttons -->
+                        <div class="wizard-navigation mt-4">
+                            <button type="button" class="btn btn-secondary" id="prevStep" disabled>Previous</button>
+                            <button type="button" class="btn btn-primary" id="nextStep">Next</button>
+                            <button type="button" class="btn btn-success d-none" id="submitGoal">Create Goal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.goal-type-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.goal-type-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.goal-type-card.selected {
+    border-color: var(--bs-primary);
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.progress-tracker .step {
+    position: relative;
+    padding-top: 20px;
+    color: var(--bs-secondary);
+}
+
+.progress-tracker .step::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 20px;
+    background: var(--bs-secondary-bg);
+    border: 2px solid var(--bs-secondary);
+    border-radius: 50%;
+}
+
+.progress-tracker .step.active {
+    color: var(--bs-primary);
+}
+
+.progress-tracker .step.active::before {
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.progress-tracker .step.completed::before {
+    background: var(--bs-success);
+    border-color: var(--bs-success);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentStep = 1;
+    const totalSteps = 4;
+    const goalData = {
+        client_id: {{ client.id }},  // Add client_id to the form data
+        goalType: '',
+        targetValue: '',
+        targetDate: '',
+        description: '',
+        milestones: []
+    };
+
+    // Update progress bar
+    function updateProgress() {
+        const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+        document.querySelector('.progress-bar').style.width = `${progress}%`;
+
+        // Update step indicators
+        document.querySelectorAll('.step').forEach((step, index) => {
+            if (index + 1 < currentStep) {
+                step.classList.add('completed');
+                step.classList.remove('active');
+            } else if (index + 1 === currentStep) {
+                step.classList.add('active');
+                step.classList.remove('completed');
+            } else {
+                step.classList.remove('active', 'completed');
+            }
+        });
+    }
+
+    // Navigation
+    document.getElementById('nextStep').addEventListener('click', () => {
+        if (validateStep()) {
+            if (currentStep < totalSteps) {
+                document.querySelector(`#step${currentStep}`).classList.add('d-none');
+                currentStep++;
+                document.querySelector(`#step${currentStep}`).classList.remove('d-none');
+                document.getElementById('prevStep').disabled = false;
+
+                if (currentStep === totalSteps) {
+                    document.getElementById('nextStep').classList.add('d-none');
+                    document.getElementById('submitGoal').classList.remove('d-none');
+                    updateReviewPage();
+                }
+
+                updateProgress();
+            }
+        }
+    });
+
+    document.getElementById('prevStep').addEventListener('click', () => {
+        if (currentStep > 1) {
+            document.querySelector(`#step${currentStep}`).classList.add('d-none');
+            currentStep--;
+            document.querySelector(`#step${currentStep}`).classList.remove('d-none');
+            document.getElementById('prevStep').disabled = currentStep === 1;
+            document.getElementById('nextStep').classList.remove('d-none');
+            document.getElementById('submitGoal').classList.add('d-none');
+            updateProgress();
+        }
+    });
+
+    // Goal type selection
+    document.querySelectorAll('.goal-type-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.goal-type-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            goalData.goalType = card.dataset.goalType;
+            updateTargetUnit(goalData.goalType);
+        });
+    });
+
+    // Add milestone
+    document.getElementById('addMilestone').addEventListener('click', () => {
+        const milestone = document.querySelector('.milestone-item').cloneNode(true);
+        milestone.querySelector('.milestone-value').value = '';
+        milestone.querySelector('.milestone-date').value = '';
+        milestone.querySelector('.milestone-description').value = '';
+        document.getElementById('milestones').appendChild(milestone);
+    });
+
+    // Submit goal
+    document.getElementById('submitGoal').addEventListener('click', () => {
+        const formData = {
+            ...goalData,
+            milestones: Array.from(document.querySelectorAll('.milestone-item')).map(item => ({
+                value: item.querySelector('.milestone-value').value,
+                date: item.querySelector('.milestone-date').value,
+                description: item.querySelector('.milestone-description').value
+            }))
+        };
+
+        fetch('/api/goals', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                window.location.href = `/client/${result.client_id}/goals`;
+            } else {
+                throw new Error(result.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to create goal. Please try again.');
+        });
+    });
+
+    function validateStep() {
+        switch(currentStep) {
+            case 1:
+                return goalData.goalType !== '';
+            case 2:
+                goalData.targetValue = document.getElementById('targetValue').value;
+                goalData.targetDate = document.getElementById('targetDate').value;
+                goalData.description = document.getElementById('goalDescription').value;
+                return goalData.targetValue && goalData.targetDate;
+            case 3:
+                return true; // Milestones are optional
+            default:
+                return true;
+        }
+    }
+
+    function updateTargetUnit(goalType) {
+        const unitMap = {
+            'weight_loss': 'lbs',
+            'muscle_gain': 'lbs',
+            'endurance': 'min',
+            'strength': 'lbs',
+            'flexibility': 'inches'
+        };
+        document.getElementById('targetUnit').textContent = unitMap[goalType] || 'units';
+    }
+
+    function updateReviewPage() {
+        document.getElementById('reviewGoalType').textContent = goalData.goalType.replace('_', ' ');
+        document.getElementById('reviewTargetValue').textContent = `${goalData.targetValue} ${document.getElementById('targetUnit').textContent}`;
+        document.getElementById('reviewTargetDate').textContent = new Date(goalData.targetDate).toLocaleDateString();
+        document.getElementById('reviewDescription').textContent = goalData.description;
+
+        const milestonesHtml = Array.from(document.querySelectorAll('.milestone-item')).map(item => `
+            <div class="milestone-review mb-2">
+                <strong>${item.querySelector('.milestone-value').value} ${document.getElementById('targetUnit').textContent}</strong>
+                by ${new Date(item.querySelector('.milestone-date').value).toLocaleDateString()}
+                - ${item.querySelector('.milestone-description').value}
+            </div>
+        `).join('');
+        document.getElementById('reviewMilestones').innerHTML = milestonesHtml;
+    }
+});
+</script>
+{% endblock %}

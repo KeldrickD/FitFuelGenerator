@@ -27,6 +27,7 @@ class Client(db.Model):
     dietary_preferences = db.relationship('DietaryPreference', backref='client', lazy=True)
     meal_plans = db.relationship('MealPlan', backref='client', lazy=True)
     activities = db.relationship('ActivityFeed', backref='client', lazy=True)
+    goals = db.relationship('Goal', backref='client', lazy=True)  # Added goals relationship
 
 class ActivityFeed(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -114,3 +115,35 @@ class MealPlan(db.Model):
     shopping_list = db.Column(db.JSON)  # Store required ingredients
     notes = db.Column(db.Text)
     status = db.Column(db.String(20), default='active')
+
+
+class Goal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    goal_type = db.Column(db.String(50), nullable=False)  # weight_loss, strength, endurance, etc.
+    target_value = db.Column(db.Float)  # The target number (e.g., target weight)
+    current_value = db.Column(db.Float)  # Current progress
+    start_date = db.Column(db.Date, nullable=False)
+    target_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), default='in_progress')  # in_progress, completed, missed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    description = db.Column(db.Text)
+    milestones = db.relationship('GoalMilestone', backref='goal', lazy=True)
+    progress_updates = db.relationship('GoalProgress', backref='goal', lazy=True)
+
+class GoalMilestone(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    goal_id = db.Column(db.Integer, db.ForeignKey('goal.id'), nullable=False)
+    milestone_value = db.Column(db.Float, nullable=False)
+    description = db.Column(db.Text)
+    target_date = db.Column(db.Date)
+    achieved = db.Column(db.Boolean, default=False)
+    achieved_date = db.Column(db.Date)
+
+class GoalProgress(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    goal_id = db.Column(db.Integer, db.ForeignKey('goal.id'), nullable=False)
+    recorded_value = db.Column(db.Float, nullable=False)
+    recorded_date = db.Column(db.Date, nullable=False)
+    notes = db.Column(db.Text)
+    metrics = db.Column(db.JSON)  # Additional progress metrics

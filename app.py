@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from utils import workout_generator, meal_generator, pdf_generator, progression_tracker, meal_substitution
 from models import (
     db, Trainer, Client, Plan, ProgressLog, ExerciseProgression,
-    MealIngredient, SubstitutionRule, DietaryPreference, MealPlan, ActivityFeed # Added new models
+    MealIngredient, SubstitutionRule, DietaryPreference, MealPlan, ActivityFeed, Goal, GoalMilestone # Added new models
 )
 from datetime import datetime, timedelta
 
@@ -417,6 +417,89 @@ def update_client(client_id):
         return jsonify({'error': 'Failed to update client'}), 500
 
 # Add these new routes after the existing routes
+
+@app.route('/client/<int:client_id>/goals/new')
+def goal_wizard(client_id):
+    try:
+        client = Client.query.get_or_404(client_id)
+        goal_descriptions = {
+            'weight_loss': 'Set target weight and create a schedule for healthy weight loss',
+            'muscle_gain': 'Build muscle mass with specific target areas and measurements',
+            'endurance': 'Improve cardiovascular fitness and endurance metrics',
+            'strength': 'Increase strength with specific lifting and resistance goals',
+            'flexibility': 'Enhance flexibility and mobility measurements'
+        }
+        return render_template('goal_wizard.html', client=client, goal_descriptions=goal_descriptions)
+    except Exception as e:
+        logging.error(f"Error loading goal wizard: {str(e)}")
+        flash('Error loading goal wizard. Please try again.', 'danger')
+        return redirect(url_for('clients_list'))
+
+@app.route('/api/goals', methods=['POST'])
+def create_goal():
+    try:
+        data = request.get_json()
+        client_id = data.get('client_id')  # Get client_id from request data
+
+        if not client_id:
+            return jsonify({'error': 'Client ID is required'}), 400
+
+        # Create the main goal
+        goal = Goal(
+            client_id=client_id,
+            goal_type=data['goalType'],
+            target_value=float(data['targetValue']),
+            current_value=None,  # Will be set when first progress is logged
+            start_date=datetime.now().date(),
+            target_date=datetime.strptime(data['targetDate'], '%Y-%m-%d').date(),
+            description=data['description']
+        )
+        db.session.add(goal)
+
+        # Create milestones
+        for milestone_data in data['milestones']:
+            milestone = GoalMilestone(
+                goal=goal,
+                milestone_value=float(milestone_data['value']),
+                description=milestone_data['description'],
+                target_date=datetime.strptime(milestone_data['date'], '%Y-%m-%d').date()
+            )
+            db.session.add(milestone)
+
+        db.session.commit()
+
+        # Log activity
+        log_activity(
+            client_id=client_id,
+            activity_type='goal_created',
+            description=f"New {data['goalType'].replace('_', ' ')} goal created",
+            icon='target',
+            priority='high',
+            is_milestone=True,
+            extra_data={
+                'goal_type': data['goalType'],
+                'target_value': data['targetValue'],
+                'target_date': data['targetDate']
+            }
+        )
+
+        return jsonify({'success': True, 'client_id': client_id})
+
+    except Exception as e:
+        logging.error(f"Error creating goal: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to create goal'}), 500
+
+@app.route('/client/<int:client_id>/goals')
+def view_goals(client_id):
+    try:
+        client = Client.query.get_or_404(client_id)
+        goals = Goal.query.filter_by(client_id=client_id).order_by(Goal.created_at.desc()).all()
+        return render_template('goals.html', client=client, goals=goals)
+    except Exception as e:
+        logging.error(f"Error viewing goals: {str(e)}")
+        flash('Error loading goals. Please try again.', 'danger')
+        return redirect(url_for('clients_list'))
 
 @app.route('/meal-planner')
 def meal_planner_wizard():

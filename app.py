@@ -421,6 +421,72 @@ def update_client(client_id):
 
 # Add these new routes after the existing routes
 
+@app.route('/fitness-quiz')
+def fitness_quiz():
+    """Display the fitness quiz form"""
+    return render_template('fitness_quiz.html')
+
+@app.route('/api/fitness-quiz', methods=['POST'])
+def submit_fitness_quiz():
+    """Handle fitness quiz submission"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        client_id = session.get('client_id')
+        if not client_id:
+            return jsonify({'error': 'No client session found'}), 401
+
+        client = Client.query.get_or_404(client_id)
+
+        # Update client profile with quiz data
+        client.fitness_level = data.get('fitnessLevel')
+        client.goal = data.get('primaryGoal')
+
+        # Create a new dietary preference record
+        dietary_pref = DietaryPreference(
+            client_id=client_id,
+            diet_type=','.join(data.get('dietaryRestrictions', [])),
+            meal_count_per_day=int(data.get('weeklyCommitment', 3))
+        )
+        db.session.add(dietary_pref)
+
+        # Create an initial goal based on primary goal
+        goal = Goal(
+            client_id=client_id,
+            goal_type=data.get('primaryGoal'),
+            start_date=datetime.now().date(),
+            target_date=(datetime.now() + timedelta(days=90)).date(),
+            description=f"Initial {data.get('primaryGoal').replace('_', ' ')} goal"
+        )
+        db.session.add(goal)
+
+        # Log activity
+        log_activity(
+            client_id=client_id,
+            activity_type='onboarding_completed',
+            description='Completed fitness assessment quiz',
+            icon='clipboard',
+            priority='high',
+            is_milestone=True,
+            extra_data=data
+        )
+
+        db.session.commit()
+
+        # Redirect to dashboard or profile page
+        return jsonify({
+            'success': True,
+            'redirect': url_for('view_progress', client_id=client_id)
+        })
+
+    except Exception as e:
+        logging.error(f"Error processing fitness quiz: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to process quiz data'}), 500
+
+
 @app.route('/client/<int:client_id>/goals/new')
 def goal_wizard(client_id):
     try:

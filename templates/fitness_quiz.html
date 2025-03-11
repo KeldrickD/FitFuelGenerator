@@ -1,0 +1,258 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Progress Bar -->
+                    <div class="progress mb-4" style="height: 10px;">
+                        <div class="progress-bar" role="progressbar" style="width: 0%;" 
+                             id="quizProgress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+                    <!-- Quiz Form -->
+                    <form id="fitnessQuizForm">
+                        <!-- Step 1: Basic Information -->
+                        <div class="quiz-step" data-step="1">
+                            <h3 class="mb-4">Let's Get Started!</h3>
+                            <div class="mb-3">
+                                <label class="form-label">What's your current fitness level?</label>
+                                <div class="d-flex gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="fitnessLevel" value="beginner" required>
+                                        <label class="form-check-label">Beginner</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="fitnessLevel" value="intermediate">
+                                        <label class="form-check-label">Intermediate</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="fitnessLevel" value="advanced">
+                                        <label class="form-check-label">Advanced</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">How often do you currently exercise?</label>
+                                <select class="form-select" name="exerciseFrequency" required>
+                                    <option value="">Select frequency</option>
+                                    <option value="rarely">Rarely or Never</option>
+                                    <option value="1-2">1-2 times per week</option>
+                                    <option value="3-4">3-4 times per week</option>
+                                    <option value="5+">5+ times per week</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Goals -->
+                        <div class="quiz-step d-none" data-step="2">
+                            <h3 class="mb-4">Your Fitness Goals</h3>
+                            <div class="mb-3">
+                                <label class="form-label">What's your primary fitness goal?</label>
+                                <select class="form-select" name="primaryGoal" required>
+                                    <option value="">Select goal</option>
+                                    <option value="weight_loss">Weight Loss</option>
+                                    <option value="muscle_gain">Build Muscle</option>
+                                    <option value="endurance">Improve Endurance</option>
+                                    <option value="strength">Increase Strength</option>
+                                    <option value="flexibility">Enhance Flexibility</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Any specific areas you want to focus on?</label>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="focusAreas" value="upper_body">
+                                            <label class="form-check-label">Upper Body</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="focusAreas" value="lower_body">
+                                            <label class="form-check-label">Lower Body</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="focusAreas" value="core">
+                                            <label class="form-check-label">Core</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="focusAreas" value="cardio">
+                                            <label class="form-check-label">Cardio</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Health & Restrictions -->
+                        <div class="quiz-step d-none" data-step="3">
+                            <h3 class="mb-4">Health Information</h3>
+                            <div class="mb-3">
+                                <label class="form-label">Do you have any injuries or health conditions we should know about?</label>
+                                <textarea class="form-control" name="healthConditions" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Any dietary restrictions?</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietaryRestrictions" value="vegetarian">
+                                    <label class="form-check-label">Vegetarian</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietaryRestrictions" value="vegan">
+                                    <label class="form-check-label">Vegan</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietaryRestrictions" value="gluten_free">
+                                    <label class="form-check-label">Gluten-Free</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dietaryRestrictions" value="dairy_free">
+                                    <label class="form-check-label">Dairy-Free</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Schedule -->
+                        <div class="quiz-step d-none" data-step="4">
+                            <h3 class="mb-4">Your Schedule</h3>
+                            <div class="mb-3">
+                                <label class="form-label">How many days per week can you commit to exercise?</label>
+                                <select class="form-select" name="weeklyCommitment" required>
+                                    <option value="">Select days</option>
+                                    <option value="2">2 days</option>
+                                    <option value="3">3 days</option>
+                                    <option value="4">4 days</option>
+                                    <option value="5">5 days</option>
+                                    <option value="6">6 days</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Preferred workout duration?</label>
+                                <select class="form-select" name="workoutDuration" required>
+                                    <option value="">Select duration</option>
+                                    <option value="30">30 minutes</option>
+                                    <option value="45">45 minutes</option>
+                                    <option value="60">60 minutes</option>
+                                    <option value="90">90 minutes</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-secondary" id="prevButton" style="display: none;">
+                                <i data-feather="arrow-left" class="me-2"></i>Previous
+                            </button>
+                            <button type="button" class="btn btn-primary" id="nextButton">
+                                Next<i data-feather="arrow-right" class="ms-2"></i>
+                            </button>
+                            <button type="submit" class="btn btn-success" id="submitButton" style="display: none;">
+                                Complete Quiz<i data-feather="check" class="ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quiz Navigation Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('fitnessQuizForm');
+    const steps = document.querySelectorAll('.quiz-step');
+    const progressBar = document.getElementById('quizProgress');
+    const prevButton = document.getElementById('prevButton');
+    const nextButton = document.getElementById('nextButton');
+    const submitButton = document.getElementById('submitButton');
+    let currentStep = 1;
+
+    function updateProgress() {
+        const progress = ((currentStep - 1) / (steps.length - 1)) * 100;
+        progressBar.style.width = `${progress}%`;
+        progressBar.setAttribute('aria-valuenow', progress);
+    }
+
+    function showStep(step) {
+        steps.forEach(s => s.classList.add('d-none'));
+        document.querySelector(`[data-step="${step}"]`).classList.remove('d-none');
+        
+        prevButton.style.display = step === 1 ? 'none' : 'block';
+        nextButton.style.display = step === steps.length ? 'none' : 'block';
+        submitButton.style.display = step === steps.length ? 'block' : 'none';
+        
+        currentStep = step;
+        updateProgress();
+    }
+
+    prevButton.addEventListener('click', () => {
+        if (currentStep > 1) {
+            showStep(currentStep - 1);
+        }
+    });
+
+    nextButton.addEventListener('click', () => {
+        if (validateStep(currentStep)) {
+            if (currentStep < steps.length) {
+                showStep(currentStep + 1);
+            }
+        }
+    });
+
+    function validateStep(step) {
+        const currentStepElement = document.querySelector(`[data-step="${step}"]`);
+        const requiredFields = currentStepElement.querySelectorAll('[required]');
+        
+        let valid = true;
+        requiredFields.forEach(field => {
+            if (!field.value) {
+                valid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        return valid;
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (validateStep(currentStep)) {
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/fitness-quiz', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    window.location.href = result.redirect;
+                } else {
+                    throw new Error('Failed to submit quiz');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('There was an error submitting the quiz. Please try again.');
+            }
+        }
+    });
+
+    // Initialize
+    showStep(1);
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+</script>
+{% endblock %}

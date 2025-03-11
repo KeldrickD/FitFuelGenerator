@@ -1,0 +1,38 @@
+FitFuel is an AI-powered app designed exclusively for personal trainers to create custom workout and meal plans that power their clients’ wins—fast, affordable, and branded. With a few taps, trainers input a client’s goals, fitness level, diet preferences, training days, and weekly food budget, and FitFuel delivers dual plans that evolve, adapt, and impress.
+Core Features:
+Workout Plans: Tailored exercises (e.g., “2x10 squats”) that progress weekly (e.g., “3x12 next week”) based on fitness level and goals like weight loss or muscle gain.  
+
+Meal Plans: Budget-friendly meals (e.g., “$2 tofu lunch”) aligned with diet prefs (vegan, high protein) and seasonal food costs (e.g., summer berries).  
+
+Budget Smarts: Keeps meals under a set weekly spend (e.g., $40/week = $5.70/day).
+Standout Enhancements:
+Progression Booster: Workouts auto-adjust to keep clients advancing.  
+
+Seasonal Meal Swap: Substitutes ingredients for cost and availability (e.g., tomatoes in July).  
+
+Quick Substitution Tool: Swaps meals or exercises on the fly (e.g., “tofu → lentils”).  
+
+Client Motivation Blurbs: Adds pep talks (e.g., “You’re crushing it!”) to plans.  
+
+Trainer Branding Option: Outputs plans with the trainer’s logo/name (e.g., “Coach Mike’s Plan”).
+How It Works:
+Trainer enters client details (e.g., “Jane, lose weight, beginner, vegan, $40/week”).  
+
+AI generates a branded PDF: workouts that scale, meals that fit the budget, swaps if needed, and motivational boosts.  
+
+Trainer delivers a pro-level plan in minutes—not hours.
+Value Proposition:
+For Trainers: Saves hours of planning, boosts client results, and upsells services with branded, budget-savvy plans.  
+
+For Clients: Gets affordable, evolving workouts + meals that win—keeping them hooked.
+Tech Snapshot:
+Built with Python (Flask), basic HTML/JS, and rule-based AI (optional GPT for blurbs).  
+
+Hosted on Heroku, launched at FitFuelTrainer.com.  
+
+Build Time: 3-5 days (max 7 with polish).
+Tagline:
+“Power Client Wins with Workouts + Meals”  
+Monetization:
+Freemium: Free for 1 plan/month, $15/month unlimited premium features.
+

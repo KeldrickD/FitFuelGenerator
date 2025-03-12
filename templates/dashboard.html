@@ -20,50 +20,7 @@
 
     <!-- Quick Stats -->
     <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <div class="feature-icon mb-3">
-                        <i data-feather="users" class="text-primary"></i>
-                    </div>
-                    <h3 class="fs-2 mb-2">{{ stats.total_clients }}</h3>
-                    <p class="mb-0">Active Clients</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <div class="feature-icon mb-3">
-                        <i data-feather="activity" class="text-primary"></i>
-                    </div>
-                    <h3 class="fs-2 mb-2">{{ stats.weekly_workouts }}</h3>
-                    <p class="mb-0">Workouts This Week</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <div class="feature-icon mb-3">
-                        <i data-feather="trending-up" class="text-primary"></i>
-                    </div>
-                    <h3 class="fs-2 mb-2">{{ stats.improving_clients }}%</h3>
-                    <p class="mb-0">Clients Improving</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <div class="feature-icon mb-3">
-                        <i data-feather="check-circle" class="text-primary"></i>
-                    </div>
-                    <h3 class="fs-2 mb-2">{{ stats.completion_rate }}%</h3>
-                    <p class="mb-0">Completion Rate</p>
-                </div>
-            </div>
-        </div>
+        {% include '_stats_cards.html' %}
     </div>
 
     <!-- Progress Visualizations -->
@@ -75,7 +32,7 @@
                     <h3 class="card-title">Weekly Workout Completion</h3>
                 </div>
                 <div class="card-body">
-                    <div style="height: 300px;">
+                    <div style="height: 300px; width: 100%; position: relative;">
                         <canvas id="weeklyWorkoutChart"></canvas>
                     </div>
                 </div>
@@ -89,7 +46,7 @@
                     <h3 class="card-title">Client Progress Distribution</h3>
                 </div>
                 <div class="card-body">
-                    <div style="height: 300px;">
+                    <div style="height: 300px; width: 100%; position: relative;">
                         <canvas id="clientProgressChart"></canvas>
                     </div>
                 </div>
@@ -103,7 +60,7 @@
                     <h3 class="card-title">Exercise Type Distribution</h3>
                 </div>
                 <div class="card-body">
-                    <div style="height: 300px;">
+                    <div style="height: 300px; width: 100%; position: relative;">
                         <canvas id="exerciseTypeChart"></canvas>
                     </div>
                 </div>
@@ -117,7 +74,7 @@
                     <h3 class="card-title">Client Goal Progress</h3>
                 </div>
                 <div class="card-body">
-                    <div style="height: 300px;">
+                    <div style="height: 300px; width: 100%; position: relative;">
                         <canvas id="goalProgressChart"></canvas>
                     </div>
                 </div>
@@ -125,9 +82,8 @@
         </div>
     </div>
 
-    <!-- Recent Activity and Client List -->
+    <!-- Client List -->
     <div class="row">
-        <!-- Client List -->
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header">
@@ -223,7 +179,6 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}

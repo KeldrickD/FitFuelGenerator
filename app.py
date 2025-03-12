@@ -82,9 +82,80 @@ def health_check():
 def index():
     """Basic index page"""
     try:
+        logging.info("Rendering index page")
         return render_template('index.html')
     except Exception as e:
         logging.error(f"Error serving index page: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/fitness-quiz')
+def fitness_quiz():
+    """Fitness quiz page"""
+    try:
+        logging.info("Rendering fitness quiz page")
+        return render_template('fitness_quiz.html')
+    except Exception as e:
+        logging.error(f"Error serving fitness quiz page: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/resource-library')
+def resource_library():
+    """Resource library page"""
+    try:
+        logging.info("Rendering resource library page")
+        return render_template('resource_library.html')
+    except Exception as e:
+        logging.error(f"Error serving resource library page: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/challenges')
+def challenges():
+    """Challenges page"""
+    try:
+        logging.info("Rendering challenges page")
+        return render_template('challenges.html')
+    except Exception as e:
+        logging.error(f"Error serving challenges page: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/dashboard')
+def dashboard():
+    """Dashboard page"""
+    try:
+        logging.info("Rendering dashboard page")
+        return render_template('dashboard.html')
+    except Exception as e:
+        logging.error(f"Error serving dashboard page: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/meal-planner-wizard')
+def meal_planner_wizard():
+    """Meal planner wizard page"""
+    try:
+        logging.info("Rendering meal planner wizard page")
+        return render_template('meal_planner_wizard.html')
+    except Exception as e:
+        logging.error(f"Error serving meal planner wizard page: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/meal-substitutions')
+def meal_substitutions():
+    """Meal substitutions page"""
+    try:
+        logging.info("Rendering meal substitutions page")
+        return render_template('meal_substitutions.html')
+    except Exception as e:
+        logging.error(f"Error serving meal substitutions page: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/clients-list')
+def clients_list():
+    """Clients list page"""
+    try:
+        logging.info("Rendering clients list page")
+        return render_template('clients.html')
+    except Exception as e:
+        logging.error(f"Error serving clients list page: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
 # Initialize database tables only

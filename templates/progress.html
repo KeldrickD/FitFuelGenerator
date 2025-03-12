@@ -33,6 +33,108 @@
         </div>
     </div>
 
+    <!-- Add this section after the Current Workout Plan Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Personalized Workout Recommendations</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Workout Focus Area -->
+                    <div class="mb-4">
+                        <h4>Recommended Focus Areas</h4>
+                        <div class="row g-3">
+                            {% if insights.workout_recommendations %}
+                                {% for focus in insights.workout_recommendations.workout_focus.primary_types %}
+                                <div class="col-md-4">
+                                    <div class="alert alert-info">
+                                        <div class="d-flex align-items-center">
+                                            <i data-feather="target" class="me-2"></i>
+                                            <strong>{{ focus|title }}</strong>
+                                        </div>
+                                        <small class="d-block mt-2">
+                                            Intensity: {{ insights.workout_recommendations.workout_focus.intensity_range }}
+                                        </small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="col-12">
+                                    <div class="alert alert-warning">
+                                        <i data-feather="info" class="me-2"></i>
+                                        Complete more workouts to receive personalized recommendations
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Suggested Exercises -->
+                    {% if insights.workout_recommendations and insights.workout_recommendations.suggested_exercises %}
+                    <div class="mb-4">
+                        <h4>Recommended Exercises</h4>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Exercise</th>
+                                        <th>Type</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for exercise in insights.workout_recommendations.suggested_exercises %}
+                                    <tr>
+                                        <td>{{ exercise.name }}</td>
+                                        <td>{{ exercise.type|title }}</td>
+                                        <td>{{ exercise.reason }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Progression Path -->
+                    {% if insights.workout_recommendations and insights.workout_recommendations.progression_path %}
+                    <div>
+                        <h4>Your Progression Path</h4>
+                        <div class="progression-timeline">
+                            {% for milestone in insights.workout_recommendations.progression_path %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ milestone.timeframe }}</h5>
+                                    <ul class="list-unstyled mb-0">
+                                        {% for focus in milestone.focus_areas %}
+                                        <li class="mb-2">
+                                            <i data-feather="check-circle" class="text-success me-2"></i>
+                                            {{ focus }}
+                                        </li>
+                                        {% endfor %}
+                                        {% if milestone.target_metrics %}
+                                        <li class="mt-2">
+                                            <small class="text-muted">
+                                                Targets:
+                                                {% for metric, value in milestone.target_metrics.items() %}
+                                                <span class="badge bg-info me-2">{{ metric|replace('_', ' ')|title }}: {{ value }}</span>
+                                                {% endfor %}
+                                            </small>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-12">
             <div class="card mb-4">

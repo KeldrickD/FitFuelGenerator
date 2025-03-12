@@ -7,6 +7,7 @@ from sqlalchemy.orm import DeclarativeBase
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from utils import progression_tracker  # Added import
+from utils import workout_recommender  # Added import
 
 # Add this function after the existing imports
 def create_sample_resources():
@@ -429,12 +430,45 @@ def view_progress(client_id):
             for prog in exercise_progressions
         ]
 
-        # Generate AI insights
+        # Get active goals for the client
+        active_goals = Goal.query.filter_by(client_id=client_id).all()
+        goals_data = [
+            {
+                'type': goal.goal_type,
+                'target_value': goal.target_value,
+                'description': goal.description,
+                'target_date': goal.target_date.isoformat() if goal.target_date else None
+            }
+            for goal in active_goals
+        ]
+
+        # Generate AI insights including workout recommendations
         insights = progression_tracker.analyze_client_progress(
             client_id,
             logs_data,
             progression_data
         )
+
+        # Add workout recommendations
+        try:
+            workout_recs = workout_recommender.generate_workout_recommendations(
+                {
+                    'id': client.id,
+                    'fitness_level': client.fitness_level,
+                    'goal': client.goal
+                },
+                logs_data,
+                goals_data
+            )
+            insights['workout_recommendations'] = workout_recs
+            logging.info(f"Generated workout recommendations for client {client_id}")
+        except Exception as e:
+            logging.error(f"Error generating workout recommendations: {str(e)}")
+            insights['workout_recommendations'] = {
+                'workout_focus': {'primary_types': [], 'intensity_range': 'moderate'},
+                'suggested_exercises': [],
+                'progression_path': []
+            }
 
         # Convert ExerciseProgression objects to serializable format
         serializable_progressions = []
@@ -838,7 +872,7 @@ def generate_workout_schedule(fitness_level, focus_areas, weekly_frequency):
             # Add exercises based on focus areas
             for area in focus_areas:
                 if area in exercise_templates[fitness_level]:
-                    exercises = exercise_templates[fitness_level][area]
+                    focus_area_exercises = exercise_templates[fitness_level][area]
                     workout['exercises'].extend([
                         {
                             'name': exercise,
@@ -846,7 +880,7 @@ def generate_workout_schedule(fitness_level, focus_areas, weekly_frequency):
                             'reps': '8-12',
                             'rest': '60 sec'
                         }
-                        for exercise in exercises[:2]  # Pick 2 exercises per area
+                        for exercise in focus_area_exercises[:2]  # Pick 2 exercises per area
                     ])
 
             weekly_workouts.append(workout)

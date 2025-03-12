@@ -122,16 +122,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const achievementCards = document.querySelectorAll('.achievement-card');
 
     achievementCards.forEach(card => {
+        const icon = card.querySelector('.achievement-icon i');
+        if (!icon) return; // Skip if icon doesn't exist
+
         card.addEventListener('mouseenter', () => {
-            const icon = card.querySelector('.achievement-icon i');
-            icon.style.transform = 'scale(1.2)';
+            // Only apply transform if icon exists
+            if (icon && icon.style) {
+                icon.style.transform = 'scale(1.2)';
+            }
         });
 
         card.addEventListener('mouseleave', () => {
-            const icon = card.querySelector('.achievement-icon i');
-            icon.style.transform = 'scale(1)';
+            // Only apply transform if icon exists
+            if (icon && icon.style) {
+                icon.style.transform = 'scale(1)';
+            }
         });
     });
+
+    // Initialize Feather icons if not already initialized
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
 });
 </script>
 {% endblock %}

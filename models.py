@@ -409,9 +409,14 @@ class Challenge(db.Model):
     reward_points = db.Column(db.Integer, default=100)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationships
-    creator = db.relationship('Client', backref='created_challenges', foreign_keys=[created_by])
-    participants = db.relationship('ChallengeParticipant', backref='challenge', lazy=True)
+    # Update relationships with back_populates to fix conflicts
+    creator = db.relationship('Client', 
+                          backref='created_challenges', 
+                          foreign_keys=[created_by])
+    participants = db.relationship('ChallengeParticipant', 
+                               back_populates='challenge',
+                               lazy=True,
+                               cascade='all, delete-orphan')
 
     def get_leaderboard(self):
         """Get current leaderboard for this challenge"""
@@ -431,8 +436,11 @@ class ChallengeParticipant(db.Model):
     completed = db.Column(db.Boolean, default=False)
     completion_date = db.Column(db.DateTime)
 
-    # Relationship to access client details
-    client = db.relationship('Client', backref='challenge_participations')
+    # Update relationships with back_populates
+    challenge = db.relationship('Challenge', 
+                            back_populates='participants')
+    client = db.relationship('Client', 
+                         back_populates='challenge_participations')
 
     def update_progress(self, new_value):
         """Update participant's progress in the challenge"""
@@ -447,6 +455,7 @@ class ChallengeParticipant(db.Model):
 
             # Award points to client
             self.client.points += challenge.reward_points
+
 
 
 class LeaderboardEntry(db.Model):

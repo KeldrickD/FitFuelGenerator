@@ -7,6 +7,67 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from utils import progression_tracker  # Added import
 
+# Add this function after the existing imports
+def create_sample_resources():
+    """Create initial sample resources if none exist"""
+    try:
+        # Check if we already have resources
+        if FitnessResource.query.first():
+            return
+
+        # Sample resources
+        resources = [
+            {
+                'title': 'Beginner Full Body Workout',
+                'description': 'A comprehensive workout routine perfect for beginners, covering all major muscle groups.',
+                'resource_type': 'video',
+                'content_url': 'https://www.youtube.com/embed/UoC_O3HzsH0',
+                'difficulty_level': 'beginner',
+                'categories': ['full body', 'strength', 'beginner'],
+                'thumbnail_url': '/static/img/workouts/full-body.svg'
+            },
+            {
+                'title': 'Nutrition Guide for Muscle Gain',
+                'description': 'Learn about proper nutrition timing, macronutrient ratios, and meal planning for muscle growth.',
+                'resource_type': 'guide',
+                'content': '''
+                    <h3>Key Principles of Muscle Gain Nutrition</h3>
+                    <ul>
+                        <li>Maintain a caloric surplus</li>
+                        <li>Consume adequate protein (1.6-2.2g/kg body weight)</li>
+                        <li>Time your meals around workouts</li>
+                        <li>Include all macronutrients in your diet</li>
+                    </ul>
+                    <h3>Sample Meal Plan</h3>
+                    <p>Here's a basic template for your daily meals...</p>
+                ''',
+                'difficulty_level': 'intermediate',
+                'categories': ['nutrition', 'muscle gain', 'meal planning']
+            },
+            {
+                'title': 'HIIT Cardio Workout',
+                'description': 'High-intensity interval training for maximum fat burn and cardiovascular fitness.',
+                'resource_type': 'video',
+                'content_url': 'https://www.youtube.com/embed/ml6cT4AZdqI',
+                'difficulty_level': 'advanced',
+                'categories': ['cardio', 'fat loss', 'hiit'],
+                'thumbnail_url': '/static/img/workouts/hiit.svg'
+            }
+        ]
+
+        # Add resources to database
+        for resource_data in resources:
+            resource = FitnessResource(**resource_data)
+            db.session.add(resource)
+
+        db.session.commit()
+        logging.info("Sample resources created successfully")
+
+    except Exception as e:
+        logging.error(f"Error creating sample resources: {str(e)}")
+        db.session.rollback()
+
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -35,6 +96,7 @@ with app.app_context():
         ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement, FitnessResource # Added Achievement and ClientAchievement and FitnessResource
     )
     db.create_all()
+    create_sample_resources() # Add this line here
 
 # Add utility function
 def log_activity(client_id, activity_type, description, icon=None, priority='normal', is_milestone=False, extra_data=None):

@@ -7,10 +7,27 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h1 class="mb-0">Progress Overview for {{ client.name }}</h1>
                 <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-lg" onclick="adjustWorkoutDifficulty()">
+                        <i data-feather="sliders" class="me-2"></i>Auto-Adjust Workout
+                    </button>
                     <a href="{{ url_for('generate_client_report', client_id=client.id) }}" 
                        class="btn btn-success btn-lg">
                         <i data-feather="file-text" class="me-2"></i>Download Report
                     </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Workout Plan Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Current Workout Plan</h3>
+                </div>
+                <div class="card-body" id="workoutPlanContainer">
+                    <!-- Workout plan will be loaded here -->
                 </div>
             </div>
         </div>
@@ -274,6 +291,88 @@ function calculateIntensity(exerciseData) {
 
 function calculateVolume(exerciseData) {
     return exerciseData.reduce((acc, curr) => acc + (curr.sets * curr.reps), 0);
+}
+
+function adjustWorkoutDifficulty() {
+    const clientId = {{ client.id }};
+
+    // Show loading state
+    const container = document.getElementById('workoutPlanContainer');
+    container.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Analyzing performance data and adjusting workout plan...</p>
+        </div>
+    `;
+
+    // Call API to adjust workout difficulty
+    fetch(`/client/${clientId}/adjust-workout`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Display the adjusted workout plan
+            displayWorkoutPlan(data.workout_plan);
+            // Show success message
+            showToast('Success', 'Workout plan has been adjusted based on your performance!', 'success');
+        } else {
+            showToast('Error', data.error || 'Failed to adjust workout plan', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error', 'Failed to adjust workout plan', 'danger');
+    });
+}
+
+function displayWorkoutPlan(workoutPlan) {
+    const container = document.getElementById('workoutPlanContainer');
+
+    let html = '<div class="table-responsive"><table class="table">';
+    html += `
+        <thead>
+            <tr>
+                <th>Exercise</th>
+                <th>Sets</th>
+                <th>Reps</th>
+                <th>Weight/Level</th>
+                <th>Adjustment</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+
+    for (const exercise of workoutPlan.exercises) {
+        const adjustmentClass = exercise.adjusted ? 
+            (exercise.adjustment_type === 'increase' ? 'text-success' : 'text-warning') : 
+            'text-muted';
+
+        html += `
+            <tr>
+                <td>${exercise.name}</td>
+                <td>${exercise.sets}</td>
+                <td>${exercise.reps}</td>
+                <td>${exercise.weight || 'N/A'}</td>
+                <td class="${adjustmentClass}">
+                    ${exercise.adjustment_reason || 'No change'}
+                </td>
+            </tr>
+        `;
+    }
+
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+function showToast(title, message, type = 'info') {
+    // You can implement a toast notification here
+    alert(`${title}: ${message}`);
 }
 </script>
 {% endblock %}

@@ -1400,5 +1400,60 @@ def view_resource(resource_id):
         flash('Error loading resource. Please try again.', 'danger')
         return redirect(url_for('resource_library'))
 
+# Add this route after your existing routes
+@app.route('/client/<int:client_id>/adjust-workout', methods=['POST'])
+def adjust_workout(client_id):
+    """Adjust workout difficulty based on client's performance data"""
+    try:
+        client = Client.query.get_or_404(client_id)
+
+        # Get recent progress logs
+        progress_logs = ProgressLog.query.filter_by(client_id=client_id)\
+            .order_by(ProgressLog.log_date.desc())\
+            .limit(10)\
+            .all()
+
+        if not progress_logs:
+            return jsonify({
+                'success': False,
+                'error': 'Not enough performance data to adjust workout'
+            }), 400
+
+        # Extract exercise data from logs
+        exercise_data = []
+        for log in progress_logs:
+            if log.exercise_data:
+                exercise_data.extend(log.exercise_data)
+
+        # Generate new workout plan with difficulty adjustment
+        adjusted_plan = workout_generator.create_workout_plan(
+            client.fitness_level,
+            client.training_days or 3,  # Default to 3 if not set
+            client.goal,
+            exercise_data
+        )
+
+        # Log the adjustment
+        log_activity(
+            client_id=client_id,
+            activity_type='workout_adjusted',
+            description='Workout difficulty automatically adjusted based on performance',
+            icon='sliders',
+            priority='normal',
+            extra_data={'adjusted_plan': adjusted_plan}
+        )
+
+        return jsonify({
+            'success': True,
+            'workout_plan': adjusted_plan['Day 1']  # Return first day's plan
+        })
+
+    except Exception as e:
+        logging.error(f"Error adjusting workout: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to adjust workout plan'
+        }), 500
+
 if __name__ == '__main__':
     app.run(debug=True)

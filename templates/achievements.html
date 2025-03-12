@@ -29,45 +29,6 @@
         </div>
     </div>
 
-    <!-- Recommended Achievements -->
-    {% if recommended_achievements %}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i data-feather="star" class="me-2"></i>Recommended For You
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for recommendation in recommended_achievements %}
-                        <div class="col-md-4">
-                            <div class="achievement-card p-3 border rounded h-100">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="achievement-icon me-3">
-                                        <i data-feather="{{ recommendation.achievement.icon }}" class="text-primary"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="mb-1">{{ recommendation.achievement.name }}</h5>
-                                        <span class="badge bg-primary">{{ recommendation.score }}% Match</span>
-                                    </div>
-                                </div>
-                                <p class="text-muted mb-2">{{ recommendation.achievement.description }}</p>
-                                <p class="small text-primary mb-0">
-                                    <i data-feather="info" class="feather-small me-1"></i>
-                                    {{ recommendation.reason }}
-                                </p>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
     <!-- Achievement Categories -->
     <div class="row g-4">
         {% for category in ['workout', 'nutrition', 'goals'] %}
@@ -86,37 +47,46 @@
                 </div>
                 <div class="card-body">
                     {% for achievement in achievements if achievement.type == category %}
-                    <div class="achievement-item mb-4">
+                    <div class="achievement-card mb-4 {% if progress_map.get(achievement.id, {}).get('completed') %}achievement-unlocked{% endif %}">
                         <div class="d-flex align-items-center mb-2">
-                            <div class="achievement-icon me-3 {% if progress_map.get(achievement.id, {}).get('completed') %}completed{% endif %}">
-                                <i data-feather="{{ achievement.icon }}" class="{% if progress_map.get(achievement.id, {}).get('completed') %}text-success{% else %}text-secondary{% endif %}"></i>
+                            <div class="achievement-icon me-3">
+                                <i data-feather="{{ achievement.icon }}" 
+                                   class="{% if progress_map.get(achievement.id, {}).get('completed') %}text-success{% else %}text-secondary{% endif %}"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <h5 class="mb-0">{{ achievement.name }}</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">{{ achievement.name }}</h5>
+                                    <span class="level-badge {{ achievement.level }}">{{ achievement.level }}</span>
+                                </div>
                                 <small class="text-muted">{{ achievement.description }}</small>
                             </div>
-                            <div class="ms-3">
-                                {% if progress_map.get(achievement.id, {}).get('completed') %}
-                                    <span class="badge bg-success">
-                                        <i data-feather="check" class="feather-small"></i>
-                                    </span>
-                                {% endif %}
-                            </div>
                         </div>
-                        <div class="progress" style="height: 5px;">
-                            <div class="progress-bar {% if progress_map.get(achievement.id, {}).get('completed') %}bg-success{% else %}bg-primary{% endif %}"
-                                 role="progressbar"
+
+                        <div class="achievement-progress">
+                            <div class="achievement-progress-bar" 
+                                 role="progressbar" 
                                  style="width: {{ progress_map.get(achievement.id, {}).get('progress', 0) }}%"
+                                 data-progress="{{ progress_map.get(achievement.id, {}).get('progress', 0) }}"
                                  aria-valuenow="{{ progress_map.get(achievement.id, {}).get('progress', 0) }}"
                                  aria-valuemin="0"
                                  aria-valuemax="100">
                             </div>
                         </div>
-                        {% if progress_map.get(achievement.id, {}).get('completed') %}
-                            <small class="text-muted">Earned {{ progress_map[achievement.id]['earned_at'].strftime('%Y-%m-%d') }}</small>
-                        {% else %}
-                            <small class="text-muted">{{ progress_map.get(achievement.id, {}).get('progress', 0)|round|int }}% Complete</small>
-                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            {% if progress_map.get(achievement.id, {}).get('completed') %}
+                                <span class="achievement-badge {{ achievement.level }} unlocked">
+                                    <i data-feather="award" class="feather-small"></i>
+                                    Earned {{ progress_map[achievement.id]['earned_at'].strftime('%Y-%m-%d') }}
+                                </span>
+                                <span class="text-success">
+                                    <i data-feather="check-circle" class="feather-small"></i>
+                                </span>
+                            {% else %}
+                                <small class="text-muted">{{ progress_map.get(achievement.id, {}).get('progress', 0)|round|int }}% Complete</small>
+                                <span class="text-muted">{{ achievement.points }} pts</span>
+                            {% endif %}
+                        </div>
                     </div>
                     {% else %}
                     <div class="text-center py-4">
@@ -131,39 +101,37 @@
     </div>
 </div>
 
-<style>
-.achievement-icon {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: var(--bs-secondary-bg);
-    transition: all 0.3s ease;
-}
+{% endblock %}
 
-.achievement-icon.completed {
-    background-color: rgba(var(--bs-success-rgb), 0.1);
-}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all progress bars with animation
+    const progressBars = document.querySelectorAll('.achievement-progress-bar');
 
-.achievement-icon i {
-    width: 24px;
-    height: 24px;
-}
+    progressBars.forEach(bar => {
+        const progress = bar.dataset.progress;
+        bar.style.width = '0%';
 
-.feather-small {
-    width: 16px;
-    height: 16px;
-}
+        setTimeout(() => {
+            bar.style.width = `${progress}%`;
+        }, 100);
+    });
 
-.achievement-card {
-    background-color: var(--bs-secondary-bg);
-    transition: transform 0.2s;
-}
+    // Add hover effects for achievement cards
+    const achievementCards = document.querySelectorAll('.achievement-card');
 
-.achievement-card:hover {
-    transform: translateY(-2px);
-}
-</style>
+    achievementCards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            const icon = card.querySelector('.achievement-icon i');
+            icon.style.transform = 'scale(1.2)';
+        });
+
+        card.addEventListener('mouseleave', () => {
+            const icon = card.querySelector('.achievement-icon i');
+            icon.style.transform = 'scale(1)';
+        });
+    });
+});
+</script>
 {% endblock %}

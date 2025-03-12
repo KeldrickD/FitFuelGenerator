@@ -378,3 +378,155 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
 .chart-container:nth-child(2) .chart-fade-in { transition-delay: 0.3s; }
 .chart-container:nth-child(3) .chart-fade-in { transition-delay: 0.5s; }
 .chart-container:nth-child(4) .chart-fade-in { transition-delay: 0.7s; }
+
+/* Achievement Card Styles */
+.achievement-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.achievement-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Achievement Progress Bar */
+.achievement-progress {
+    height: 8px;
+    background: rgba(26, 29, 32, 0.4);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0;
+    position: relative;
+}
+
+.achievement-progress-bar {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Progress Bar Shine Animation */
+.achievement-progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    animation: shine 2s infinite;
+}
+
+/* Achievement Unlock Animation */
+.achievement-unlocked {
+    animation: unlockPulse 0.5s ease-out;
+}
+
+.achievement-icon {
+    transition: transform 0.3s ease;
+}
+
+.achievement-unlocked .achievement-icon {
+    animation: iconPop 0.5s ease-out;
+}
+
+/* Achievement Badge Glow */
+.achievement-badge {
+    position: relative;
+    display: inline-block;
+}
+
+.achievement-badge.bronze {
+    color: #CD7F32;
+}
+
+.achievement-badge.silver {
+    color: #C0C0C0;
+}
+
+.achievement-badge.gold {
+    color: #FFD700;
+}
+
+.achievement-badge.unlocked {
+    animation: badgeGlow 2s infinite;
+}
+
+/* Keyframe Animations */
+@keyframes shine {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+@keyframes unlockPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes iconPop {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes badgeGlow {
+    0% {
+        filter: brightness(1);
+    }
+    50% {
+        filter: brightness(1.3);
+    }
+    100% {
+        filter: brightness(1);
+    }
+}
+
+/* Level Badge Styles */
+.level-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.level-badge.bronze {
+    background: rgba(205, 127, 50, 0.2);
+    color: #CD7F32;
+}
+
+.level-badge.silver {
+    background: rgba(192, 192, 192, 0.2);
+    color: #C0C0C0;
+}
+
+.level-badge.gold {
+    background: rgba(255, 215, 0, 0.2);
+    color: #FFD700;
+}

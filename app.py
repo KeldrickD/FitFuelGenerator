@@ -121,6 +121,48 @@ def create_sample_achievements():
         logging.error(f"Error creating sample achievements: {str(e)}")
         db.session.rollback()
 
+def create_sample_client_achievements(client_id):
+    """Create sample client achievements for testing"""
+    try:
+        # Check if client already has achievements
+        if ClientAchievement.query.filter_by(client_id=client_id).first():
+            return
+
+        # Get all achievements
+        achievements = Achievement.query.all()
+
+        # Create progress data for each achievement
+        for achievement in achievements:
+            # Different progress states for testing animations
+            if achievement.type == 'workout':
+                progress = 75  # In progress
+                completed = False
+                earned_at = None
+            elif achievement.type == 'nutrition':
+                progress = 100  # Completed
+                completed = True
+                earned_at = datetime.utcnow()
+            else:
+                progress = 30  # Just started
+                completed = False
+                earned_at = None
+
+            client_achievement = ClientAchievement(
+                client_id=client_id,
+                achievement_id=achievement.id,
+                progress=progress,
+                completed=completed,
+                earned_at=earned_at
+            )
+            db.session.add(client_achievement)
+
+        db.session.commit()
+        logging.info(f"Sample client achievements created for client {client_id}")
+
+    except Exception as e:
+        logging.error(f"Error creating sample client achievements: {str(e)}")
+        db.session.rollback()
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -149,8 +191,13 @@ with app.app_context():
         ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement, FitnessResource, GoalProgress # Added Achievement and ClientAchievement and FitnessResource and GoalProgress
     )
     db.create_all()
-    create_sample_resources() # Add this line here
-    create_sample_achievements() # Add this line here
+    create_sample_resources()
+    create_sample_achievements()
+
+    # Create sample client achievements for existing clients
+    clients = Client.query.all()
+    for client in clients:
+        create_sample_client_achievements(client.id)
 
 # Add utility function
 def log_activity(client_id, activity_type, description, icon=None, priority='normal', is_milestone=False, extra_data=None):

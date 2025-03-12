@@ -1,7 +1,11 @@
 from datetime import datetime, timedelta
 from sqlalchemy import or_, func, desc
-from app import db
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 import logging
+
+# Create db instance
+db = SQLAlchemy()
 
 class Trainer(db.Model):
     id = db.Column(db.Integer, primary_key=True)

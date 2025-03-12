@@ -1,13 +1,12 @@
 import os
 import logging
-import random # Added import for random.choice
+import random
 from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify, send_file
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
-from werkzeug.security import generate_password_hash, check_password_hash
+from models import db, Trainer, Client, Plan, ProgressLog, ExerciseProgression, MealIngredient, SubstitutionRule, DietaryPreference, MealPlan, ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement, FitnessResource, GoalProgress, Challenge, ChallengeParticipant, LeaderboardEntry
 from datetime import datetime, timedelta
-from utils import progression_tracker  # Added import
-from utils import workout_recommender  # Added import
+from utils import progression_tracker
+from utils import workout_recommender
+from utils.ai_meal_planner import generate_ai_meal_plan
 
 # Add this function after the existing imports
 def create_sample_resources():
@@ -68,6 +67,7 @@ def create_sample_resources():
     except Exception as e:
         logging.error(f"Error creating sample resources: {str(e)}")
         db.session.rollback()
+
 
 
 def create_sample_achievements():
@@ -223,10 +223,10 @@ def create_sample_client():
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-class Base(DeclarativeBase):
-    pass
+#class Base(DeclarativeBase):
+#    pass
 
-db = SQLAlchemy(model_class=Base)
+#db = SQLAlchemy(model_class=Base)
 # create the app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
@@ -250,7 +250,7 @@ with app.app_context():
     db.create_all()
     create_sample_resources()
     create_sample_achievements()
-    create_sample_client()  # Add this line
+    create_sample_client()
 
     # Create sample client achievements for existing clients
     clients = Client.query.all()
@@ -329,10 +329,26 @@ def create_plan():
                 client_performance  # Pass performance data to the workout generator
             )
 
-            meal_plan = meal_generator.create_meal_plan(
-                client_data['diet_preference'],
-                client_data['weekly_budget']
+            # Create dietary preferences for AI meal planner
+            diet_pref = DietaryPreference(
+                diet_type=client_data['diet_preference'],
+                meal_count_per_day=3,  # Default value
+                excluded_ingredients=[],  # Can be updated later
+                preferred_ingredients=[],  # Can be updated later
+                meal_size_preference='medium',  # Default value
+                calorie_target=2000  # Default value, should be calculated based on goals
             )
+
+            # Generate AI meal plan
+            try:
+                meal_plan = generate_ai_meal_plan(diet_pref)
+            except Exception as e:
+                logging.error(f"Error with AI meal plan, falling back to basic plan: {str(e)}")
+                # Fallback to basic meal generator
+                meal_plan = meal_generator.create_meal_plan(
+                    client_data['diet_preference'],
+                    client_data['weekly_budget']
+                )
 
             # Store in session for preview
             session['current_plan'] = {
@@ -836,29 +852,29 @@ def submit_fitness_quiz():
 
 def generate_workout_schedule(fitness_level, focus_areas, weekly_frequency):
     """Generate a personalized workout schedule based on quiz responses"""
-    schedule = []
-
-    # Define exercise templates based on fitness level
-    exercise_templates = {
+    exercises_by_level = {
         'beginner': {
-            'upper_body': ['Push-ups (Modified)', 'Dumbbell Rows', 'Wall Push-ups'],
-            'lower_body': ['Bodyweight Squats', 'Lunges', 'Calf Raises'],
-            'core': ['Plank Hold', 'Bird Dogs', 'Dead Bugs'],
+            'upper_body': ['Push-ups', 'Band Rows', 'Wall Push-ups'],
+            'lower_body': ['Bodyweight Squats', 'Walking Lunges', 'Glute Bridges'],
+            'core': ['Planks', 'Bird Dogs', 'Dead Bugs'],
             'cardio': ['Walking', 'Stationary Bike', 'Swimming']
         },
         'intermediate': {
-            'upper_body': ['Push-ups', 'Pull-ups', 'Dips'],
-            'lower_body': ['Barbell Squats', 'Romanian Deadlifts', 'Box Jumps'],
-            'core': ['Planks', 'Russian Twists', 'Mountain Climbers'],
-            'cardio': ['Running', 'HIIT Intervals', 'Rowing']
+            'upper_body': ['Regular Push-ups', 'Inverted Rows', 'Diamond Push-ups'],
+            'lower_body': ['Jump Squats', 'Reverse Lunges', 'Step-ups'],
+            'core': ['Side Planks', 'Mountain Climbers', 'Russian Twists'],
+            'cardio': ['Jogging', 'Jump Rope', 'Rowing']
         },
         'advanced': {
             'upper_body': ['Weighted Push-ups', 'Weighted Pull-ups', 'Ring Dips'],
+            'lowerbody': ['Weighted Push-ups', 'Weighted Pull-ups', 'Ring Dips'],
             'lower_body': ['Front Squats', 'Deadlifts', 'Plyometric Lunges'],
             'core': ['Dragon Flags', 'Ab Wheel Rollouts', 'Hanging Leg Raises'],
             'cardio': ['Sprinting', 'Complex HIIT', 'CrossFit WODs']
         }
     }
+
+    schedule = []
 
     # Generate workouts based on focus areas and frequency
     for week in range(4):  # Generate 4 weeks of workouts
@@ -871,12 +887,13 @@ def generate_workout_schedule(fitness_level, focus_areas, weekly_frequency):
 
             # Add exercises based on focus areas
             for area in focus_areas:
-                if area in exercise_templates[fitness_level]:
-                    focus_area_exercises = exercise_templates[fitness_level][area]
+                if area in exercises_by_level[fitness_level]:
+                    focus_area_exercises = exercises_by_level[fitness_level][area]
                     workout['exercises'].extend([
                         {
                             'name': exercise,
-                            'sets': 3,
+                            'type': area,
+                            'sets': '3-4',
                             'reps': '8-12',
                             'rest': '60 sec'
                         }
@@ -885,7 +902,8 @@ def generate_workout_schedule(fitness_level, focus_areas, weekly_frequency):
 
             weekly_workouts.append(workout)
 
-        schedule.append({'week': week + 1,
+        schedule.append({
+            'week': week + 1,
             'workouts': weekly_workouts
         })
 
@@ -913,7 +931,7 @@ def generate_meal_schedule(dietary_restrictions, meals_per_day):
 
     diet_type = 'standard'
     if 'vegan' in dietary_restrictions:
-                diet_type = 'vegan'
+        diet_type = 'vegan'
     elif 'vegetarian' in dietary_restrictions:
         diet_type = 'vegetarian'
 
@@ -939,7 +957,7 @@ def generate_meal_schedule(dietary_restrictions, meals_per_day):
     return schedule
 
 def calculate_macros(meal, diet_type):
-    """Calculate approximate macros fora meal"""
+    """Calculate approximate macros for a meal"""
     # Simplified macro calculations
     base_macros = {
         'standard': {'protein': 30, 'carbs': 40, 'fats': 30},
@@ -1130,7 +1148,7 @@ def find_ingredient_substitutes():
             return jsonify({'error': 'Ingredient name is required'}), 400
 
         # Get client preferences and allergies
-        client= Client.query.getor_404(client_id) if client_id else None
+        client = Client.query.getor_404(client_id) if client_id else None
         preferences = {
             'diet_type': client.diet_preference if client else None,
             'budget_conscious': bool(budget_limit),
@@ -1160,9 +1178,9 @@ def validate_ingredient_substitution():
             return jsonify({'error': 'Missing required fields'}), 400
 
         validation = meal_substitution.validate_substitution(data['original'],
-            data['substitute'],
-            float(data['amount'])
-        )
+                                                             data['substitute'],
+                                                             float(data['amount'])
+                                                             )
 
         return jsonify(validation)
 
@@ -1706,23 +1724,23 @@ def achievement_share_preview(achievement_id):
 
         # Generate preview HTML
         preview_html = render_template('_achievement_share_preview.html',
-            achievement=achievement,
-            client=client,
-            earned_date=client_achievement.earned_at.strftime('%B %d, %Y')
-        )
+                                        achievement=achievement,
+                                        client=client,
+                                        earned_date=client_achievement.earned_at.strftime('%B %d, %Y')
+                                        )
 
         # Generate share text
         share_text = f"I just earned the {achievement.name} achievement on FitTracker! 🏆"
         if achievement.level:
-            share_text += f" ({achievement.level.title()} level)"
+                        share_text += f" ({achievement.level.title()} level)"
 
         return jsonify({
             'success': True,
             'preview_html': preview_html,
             'share_text': share_text,
-            'achievement_url': url_for('achievement_share_preview', 
-                                     achievement_id=achievement_id,
-                                     _external=True)
+            'achievement_url': url_for('achievement_share_preview',
+                                         achievement_id=achievement_id,
+                                         _external=True)
         })
 
     except Exception as e:
@@ -1731,6 +1749,80 @@ def achievement_share_preview(achievement_id):
             'success': False,
             'error': 'Failed to generate achievement preview'
         }), 500
+
+# Add new route for AI meal planning
+@app.route('/generate-meal-plan', methods=['POST'])
+def generate_meal_plan():
+    """Generate an AI-powered meal plan based on client preferences"""
+    try:
+        if 'client_id' not in session:
+            return jsonify({'error': 'Please log in first'}), 401
+
+        data = request.get_json()
+        client = Client.query.get_or_404(session['client_id'])
+        logging.info(f"Generating meal plan for client {client.id}")
+
+        # Get client's dietary preferences
+        preferences = DietaryPreference.query.filter_by(client_id=client.id).first()
+        if not preferences:
+            return jsonify({'error': 'Please set your dietary preferences first'}), 400
+
+        logging.info(f"Using dietary preferences: {preferences.diet_type}, meals per day: {preferences.meal_count_per_day}")
+
+        # Generate AI meal plan
+        try:
+            logging.info("Calling OpenAI API for meal plan generation")
+            meal_plan = generate_ai_meal_plan(preferences, duration_weeks=int(data.get('duration_weeks', 1)))
+            logging.info("Successfully generated AI meal plan")
+
+            # Create new meal plan record
+            new_plan = MealPlan(
+                client_id=client.id,
+                start_date=datetime.now().date(),
+                end_date=(datetime.now() + timedelta(weeks=int(data.get('duration_weeks', 1)))).date(),
+                daily_plans=meal_plan['weekly_plans'],
+                shopping_list=meal_plan['shopping_lists'],
+                notes='\n'.join(meal_plan['meal_prep_tips']),
+                status='active'
+            )
+            db.session.add(new_plan)
+
+            # Log activity
+            log_activity(
+                client_id=client.id,
+                activity_type='meal_plan_generated',
+                description='Generated new AI meal plan',
+                icon='coffee',
+                extra_data={'plan_id': new_plan.id}
+            )
+
+            db.session.commit()
+            logging.info(f"Created new meal plan with ID: {new_plan.id}")
+
+            return jsonify({
+                'success': True,
+                'meal_plan': meal_plan,
+                'plan_id': new_plan.id
+            })
+
+        except Exception as e:
+            logging.error(f"Error generating AI meal plan: {str(e)}")
+            # Fallback to basic meal generator
+            logging.info("Falling back to basic meal generator")
+            fallback_plan = meal_generator.create_meal_plan(
+                preferences.diet_type,
+                float(data.get('weekly_budget', 100))  # Default budget if not specified
+            )
+
+            return jsonify({
+                'success': True,
+                'meal_plan': fallback_plan,
+                'is_fallback': True
+            })
+
+    except Exception as e:
+        logging.error(f"Error in generate_meal_plan route: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -68,6 +68,59 @@ def create_sample_resources():
         db.session.rollback()
 
 
+def create_sample_achievements():
+    """Create initial sample achievements if none exist"""
+    try:
+        # Check if we already have achievements
+        if Achievement.query.first():
+            return
+
+        # Sample achievements
+        achievements = [
+            {
+                'name': 'Workout Warrior',
+                'description': 'Complete 10 workouts in a month',
+                'type': 'workout',
+                'criteria': {'workout_count': 10},
+                'icon': 'activity',
+                'level': 'bronze',
+                'points': 100,
+                'difficulty': 1
+            },
+            {
+                'name': 'Nutrition Master',
+                'description': 'Log all meals for 30 consecutive days',
+                'type': 'nutrition',
+                'criteria': {'meal_streak': 30},
+                'icon': 'coffee',
+                'level': 'gold',
+                'points': 300,
+                'difficulty': 3
+            },
+            {
+                'name': 'Goal Getter',
+                'description': 'Achieve your first fitness goal',
+                'type': 'goals',
+                'criteria': {'goals_completed': 1},
+                'icon': 'target',
+                'level': 'silver',
+                'points': 200,
+                'difficulty': 2
+            }
+        ]
+
+        # Add achievements to database
+        for achievement_data in achievements:
+            achievement = Achievement(**achievement_data)
+            db.session.add(achievement)
+
+        db.session.commit()
+        logging.info("Sample achievements created successfully")
+
+    except Exception as e:
+        logging.error(f"Error creating sample achievements: {str(e)}")
+        db.session.rollback()
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -97,6 +150,7 @@ with app.app_context():
     )
     db.create_all()
     create_sample_resources() # Add this line here
+    create_sample_achievements() # Add this line here
 
 # Add utility function
 def log_activity(client_id, activity_type, description, icon=None, priority='normal', is_milestone=False, extra_data=None):

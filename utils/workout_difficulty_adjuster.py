@@ -8,10 +8,14 @@ def analyze_performance_metrics(exercise_data: List[Dict]) -> Dict:
     """
     try:
         if not exercise_data:
-            return {'recommendation': 'maintain', 'confidence': 0}
+            return {
+                'recommendation': 'maintain',
+                'confidence': 50,
+                'adjustment_factor': 1.0
+            }
 
         # Calculate performance trends
-        completion_rate = sum(1 for entry in exercise_data if entry.get('completed', False)) / len(exercise_data)
+        completion_rate = sum(1 for entry in exercise_data if entry.get('completed', True)) / len(exercise_data)
 
         # Analyze progression in reps and weights
         progression_metrics = {
@@ -20,6 +24,22 @@ def analyze_performance_metrics(exercise_data: List[Dict]) -> Dict:
             'form_quality': 0
         }
 
+        # If we only have one data point, use it to make a conservative adjustment
+        if len(exercise_data) == 1:
+            entry = exercise_data[0]
+            if entry.get('completed', True) and entry.get('form_rating', 7) >= 7:
+                return {
+                    'recommendation': 'increase',
+                    'confidence': 60,
+                    'adjustment_factor': 1.1  # 10% increase
+                }
+            return {
+                'recommendation': 'maintain',
+                'confidence': 60,
+                'adjustment_factor': 1.0
+            }
+
+        # Analyze trends if we have multiple data points
         for i in range(1, len(exercise_data)):
             current = exercise_data[i]
             previous = exercise_data[i-1]
@@ -36,17 +56,17 @@ def analyze_performance_metrics(exercise_data: List[Dict]) -> Dict:
             if current.get('form_rating', 0) > previous.get('form_rating', 0):
                 progression_metrics['form_quality'] += 1
 
-        # Calculate confidence score
-        confidence = min((len(exercise_data) / 5) * 100, 100)  # More data = higher confidence
+        # Calculate confidence score - more lenient with limited data
+        confidence = min((len(exercise_data) / 3) * 100, 100)  # Need only 3 sessions for full confidence
 
         # Determine adjustment recommendation
-        if completion_rate >= 0.8 and all(metric > 0 for metric in progression_metrics.values()):
+        if completion_rate >= 0.7 and sum(progression_metrics.values()) > 0:
             return {
                 'recommendation': 'increase',
                 'confidence': confidence,
                 'adjustment_factor': 1.15  # 15% increase
             }
-        elif completion_rate < 0.6 or any(metric < -1 for metric in progression_metrics.values()):
+        elif completion_rate < 0.5 or all(metric < 0 for metric in progression_metrics.values()):
             return {
                 'recommendation': 'decrease',
                 'confidence': confidence,
@@ -61,7 +81,11 @@ def analyze_performance_metrics(exercise_data: List[Dict]) -> Dict:
 
     except Exception as e:
         logging.error(f"Error analyzing performance metrics: {str(e)}")
-        return {'recommendation': 'maintain', 'confidence': 0}
+        return {
+            'recommendation': 'maintain',
+            'confidence': 50,
+            'adjustment_factor': 1.0
+        }
 
 def adjust_exercise_difficulty(
     exercise: Dict,

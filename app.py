@@ -1430,25 +1430,62 @@ def adjust_workout(client_id):
             .limit(10)\
             .all()
 
-        if not progress_logs:
-            return jsonify({
-                'success': False,
-                'error': 'Not enough performance data to adjust workout'
-            }), 400
-
         # Extract exercise data from logs
         exercise_data = []
         for log in progress_logs:
             if log.exercise_data:
-                exercise_data.extend(log.exercise_data)
+                for exercise in log.exercise_data:
+                    # Add completion status based on metrics
+                    exercise['completed'] = log.workout_completed
+                    # Add form rating based on intensity metric
+                    exercise['form_rating'] = log.metrics.get('intensity', 7) if log.metrics else 7
+                    exercise_data.append(exercise)
+
+        # Default workout if no logs exist
+        base_exercises = [
+            {
+                'name': 'Push-ups',
+                'sets': 3,
+                'reps': 10,
+                'type': 'strength'
+            },
+            {
+                'name': 'Bodyweight Squats',
+                'sets': 3,
+                'reps': 12,
+                'type': 'strength'
+            },
+            {
+                'name': 'Plank',
+                'sets': 3,
+                'reps': '30 seconds',
+                'type': 'core'
+            }
+        ]
 
         # Generate new workout plan with difficulty adjustment
-        adjusted_plan = workout_generator.create_workout_plan(
-            client.fitness_level,
-            client.training_days or 3,  # Default to 3 if not set
-            client.goal,
-            exercise_data
-        )
+        if exercise_data:
+            adjusted_exercises = []
+            for exercise in exercise_data:
+                # Group exercise data by name
+                exercise_history = [e for e in exercise_data if e['name'] == exercise['name']]
+                if exercise_history:
+                    adjusted = workout_generator.adjust_exercise_difficulty(
+                        exercise.copy(),
+                        exercise_history,
+                        client.fitness_level
+                    )
+                    if adjusted not in adjusted_exercises:  # Avoid duplicates
+                        adjusted_exercises.append(adjusted)
+        else:
+            # If no exercise data, create a beginner-friendly plan
+            adjusted_exercises = base_exercises
+
+        # Create the response workout plan
+        workout_plan = {
+            'exercises': adjusted_exercises,
+            'last_adjusted': datetime.utcnow().isoformat()
+        }
 
         # Log the adjustment
         log_activity(
@@ -1457,12 +1494,12 @@ def adjust_workout(client_id):
             description='Workout difficulty automatically adjusted based on performance',
             icon='sliders',
             priority='normal',
-            extra_data={'adjusted_plan': adjusted_plan}
+            extra_data={'adjusted_plan': workout_plan}
         )
 
         return jsonify({
             'success': True,
-            'workout_plan': adjusted_plan['Day 1']  # Return first day's plan
+            'workout_plan': workout_plan
         })
 
     except Exception as e:

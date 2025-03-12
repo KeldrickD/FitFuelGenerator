@@ -219,7 +219,8 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Load Chart.js from CDN before your script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Feather icons
@@ -230,129 +231,151 @@ document.addEventListener('DOMContentLoaded', function() {
     // Chart.js Global Configuration
     Chart.defaults.color = '#fff';
     Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+    Chart.defaults.plugins.legend.labels.color = '#fff';
+    Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.1)';
+    Chart.defaults.scale.ticks.color = '#fff';
 
-    // Weekly Workout Completion Chart
-    const weeklyWorkoutCtx = document.getElementById('weeklyWorkoutChart').getContext('2d');
-    new Chart(weeklyWorkoutCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Completed Workouts',
-                data: {{ progress_data.weekly_workouts|tojson }},
-                backgroundColor: 'rgba(var(--bs-primary-rgb), 0.5)',
-                borderColor: 'var(--bs-primary)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
+    try {
+        // Weekly Workout Completion Chart
+        const weeklyWorkoutCtx = document.getElementById('weeklyWorkoutChart').getContext('2d');
+        new Chart(weeklyWorkoutCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Completed Workouts',
+                    data: {{ progress_data.weekly_workouts|tojson }},
+                    backgroundColor: 'rgba(var(--bs-primary-rgb), 0.5)',
+                    borderColor: 'var(--bs-primary)',
+                    borderWidth: 1
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
                     }
-                }
-            }
-        }
-    });
-
-    // Client Progress Distribution Chart
-    const clientProgressCtx = document.getElementById('clientProgressChart').getContext('2d');
-    new Chart(clientProgressCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Improving', 'Maintaining', 'Needs Focus'],
-            datasets: [{
-                data: [
-                    {{ progress_data.client_improvements.improving }},
-                    {{ progress_data.client_improvements.maintaining }},
-                    {{ progress_data.client_improvements.declining }}
-                ],
-                backgroundColor: [
-                    'rgba(var(--bs-success-rgb), 0.5)',
-                    'rgba(var(--bs-info-rgb), 0.5)',
-                    'rgba(var(--bs-warning-rgb), 0.5)'
-                ],
-                borderColor: [
-                    'var(--bs-success)',
-                    'var(--bs-info)',
-                    'var(--bs-warning)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false
-        }
-    });
-
-    // Exercise Type Chart
-    const exerciseTypeCtx = document.getElementById('exerciseTypeChart').getContext('2d');
-    new Chart(exerciseTypeCtx, {
-        type: 'pie',
-        data: {
-            labels: Object.keys({{ progress_data.completion_by_type|tojson }}),
-            datasets: [{
-                data: Object.values({{ progress_data.completion_by_type|tojson }}),
-                backgroundColor: [
-                    'rgba(var(--bs-primary-rgb), 0.5)',
-                    'rgba(var(--bs-success-rgb), 0.5)',
-                    'rgba(var(--bs-info-rgb), 0.5)'
-                ],
-                borderColor: [
-                    'var(--bs-primary)',
-                    'var(--bs-success)',
-                    'var(--bs-info)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false
-        }
-    });
-
-    // Goal Progress Chart
-    const goalProgressCtx = document.getElementById('goalProgressChart').getContext('2d');
-    const goalProgressData = {{ progress_data.goal_progress|tojson }};
-    new Chart(goalProgressCtx, {
-        type: 'bar',
-        data: {
-            labels: goalProgressData.map(item => item.client_name),
-            datasets: [{
-                label: 'Goal Progress (%)',
-                data: goalProgressData.map(item => item.progress),
-                backgroundColor: 'rgba(var(--bs-info-rgb), 0.5)',
-                borderColor: 'var(--bs-info)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: function(value) {
-                            return value + '%';
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
                         }
                     }
                 }
             }
-        }
-    });
+        });
+
+        // Client Progress Distribution Chart
+        const clientProgressCtx = document.getElementById('clientProgressChart').getContext('2d');
+        new Chart(clientProgressCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Improving', 'Maintaining', 'Needs Focus'],
+                datasets: [{
+                    data: [
+                        {{ progress_data.client_improvements.improving }},
+                        {{ progress_data.client_improvements.maintaining }},
+                        {{ progress_data.client_improvements.declining }}
+                    ],
+                    backgroundColor: [
+                        'rgba(var(--bs-success-rgb), 0.5)',
+                        'rgba(var(--bs-info-rgb), 0.5)',
+                        'rgba(var(--bs-warning-rgb), 0.5)'
+                    ],
+                    borderColor: [
+                        'var(--bs-success)',
+                        'var(--bs-info)',
+                        'var(--bs-warning)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Exercise Type Chart
+        const exerciseTypeCtx = document.getElementById('exerciseTypeChart').getContext('2d');
+        new Chart(exerciseTypeCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys({{ progress_data.completion_by_type|tojson }}),
+                datasets: [{
+                    data: Object.values({{ progress_data.completion_by_type|tojson }}),
+                    backgroundColor: [
+                        'rgba(var(--bs-primary-rgb), 0.5)',
+                        'rgba(var(--bs-success-rgb), 0.5)',
+                        'rgba(var(--bs-info-rgb), 0.5)'
+                    ],
+                    borderColor: [
+                        'var(--bs-primary)',
+                        'var(--bs-success)',
+                        'var(--bs-info)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Goal Progress Chart
+        const goalProgressCtx = document.getElementById('goalProgressChart').getContext('2d');
+        const goalProgressData = {{ progress_data.goal_progress|tojson }};
+        new Chart(goalProgressCtx, {
+            type: 'bar',
+            data: {
+                labels: goalProgressData.map(item => item.client_name),
+                datasets: [{
+                    label: 'Goal Progress (%)',
+                    data: goalProgressData.map(item => item.progress),
+                    backgroundColor: 'rgba(var(--bs-info-rgb), 0.5)',
+                    borderColor: 'var(--bs-info)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error initializing charts:', error);
+    }
 });
 </script>
 {% endblock %}

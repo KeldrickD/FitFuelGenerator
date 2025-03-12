@@ -1,0 +1,207 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>Social Challenges</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createChallengeModal">
+                    <i data-feather="plus"></i> Create Challenge
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Challenges -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Active Challenges</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        {% for challenge in active_challenges %}
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ challenge.name }}</h5>
+                                    <p class="card-text">{{ challenge.description }}</p>
+                                    <div class="mb-3">
+                                        <span class="badge bg-info">{{ challenge.challenge_type|title }}</span>
+                                        <span class="badge bg-secondary">{{ challenge.participants|length }} Participants</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">Ends {{ challenge.end_date.strftime('%Y-%m-%d') }}</small>
+                                        {% if challenge in user_challenges %}
+                                        <button class="btn btn-outline-success btn-sm" disabled>
+                                            <i data-feather="check"></i> Joined
+                                        </button>
+                                        {% else %}
+                                        <button onclick="joinChallenge({{ challenge.id }})" class="btn btn-primary btn-sm">
+                                            Join Challenge
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i data-feather="info"></i> No active challenges at the moment.
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Global Leaderboard</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>User</th>
+                                    <th>Points</th>
+                                    <th>Achievements</th>
+                                    <th>Completed Challenges</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in leaderboard %}
+                                <tr {% if entry.client_id == current_user.id %}class="table-info"{% endif %}>
+                                    <td>{{ entry.rank }}</td>
+                                    <td>{{ entry.client.name }}</td>
+                                    <td>{{ entry.points }}</td>
+                                    <td>{{ entry.metadata.achievements|default(0) }}</td>
+                                    <td>{{ entry.metadata.completed_challenges|default(0) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No leaderboard entries yet</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Challenge Modal -->
+<div class="modal fade" id="createChallengeModal" tabindex="-1" aria-labelledby="createChallengeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createChallengeModalLabel">Create New Challenge</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createChallengeForm" onsubmit="return createChallenge(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="challengeName" class="form-label">Challenge Name</label>
+                        <input type="text" class="form-control" id="challengeName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="challengeDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="challengeDescription" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="challengeType" class="form-label">Challenge Type</label>
+                        <select class="form-select" id="challengeType" name="challenge_type" required>
+                            <option value="workout">Workout</option>
+                            <option value="steps">Steps</option>
+                            <option value="nutrition">Nutrition</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="targetValue" class="form-label">Target Value</label>
+                        <input type="number" class="form-control" id="targetValue" name="target_value" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="endDate" name="end_date" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Challenge</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function joinChallenge(challengeId) {
+    fetch(`/challenge/${challengeId}/join`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to join challenge');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to join challenge');
+    });
+}
+
+function createChallenge(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    fetch('/challenge/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to create challenge');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to create challenge');
+    });
+
+    return false;
+}
+
+// Initialize Feather icons
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
+{% endblock %}

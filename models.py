@@ -29,6 +29,26 @@ class Client(db.Model):
     points = db.Column(db.Integer, default=0)  # Total achievement points
     created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Added created_at field
 
+    # Add new relationships for challenges and leaderboards
+    participated_challenges = db.relationship('Challenge', 
+                                           secondary='challenge_participant',
+                                           backref='participants_list',
+                                           lazy='dynamic')
+
+    def get_active_challenges(self):
+        """Get all active challenges for the client"""
+        return ChallengeParticipant.query\
+            .filter_by(client_id=self.id)\
+            .filter(ChallengeParticipant.completed == False)\
+            .all()
+
+    def get_global_rank(self):
+        """Get client's global ranking"""
+        entry = LeaderboardEntry.query\
+            .filter_by(client_id=self.id, category='global')\
+            .first()
+        return entry.rank if entry else None
+
 class ActivityFeed(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
@@ -115,7 +135,6 @@ class MealPlan(db.Model):
     shopping_list = db.Column(db.JSON)  # Store required ingredients
     notes = db.Column(db.Text)
     status = db.Column(db.String(20), default='active')
-
 
 class Goal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -356,3 +375,81 @@ class FitnessResource(db.Model):
             base_query = base_query.filter(cls.categories.contains([category]))
 
         return base_query.order_by(cls.created_at.desc()).all()
+
+class Challenge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    challenge_type = db.Column(db.String(50), nullable=False)  # workout, steps, nutrition
+    target_value = db.Column(db.Float, nullable=False)  # Target number to achieve
+    start_date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    status = db.Column(db.String(20), default='active')  # active, completed, cancelled
+    visibility = db.Column(db.String(20), default='public')  # public, private, friends
+    rules = db.Column(db.JSON)  # Store any additional rules or criteria
+    reward_points = db.Column(db.Integer, default=100)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    creator = db.relationship('Client', backref='created_challenges', foreign_keys=[created_by])
+    participants = db.relationship('ChallengeParticipant', backref='challenge', lazy=True)
+
+    def get_leaderboard(self):
+        """Get current leaderboard for this challenge"""
+        return ChallengeParticipant.query\
+            .filter_by(challenge_id=self.id)\
+            .order_by(ChallengeParticipant.current_value.desc())\
+            .all()
+
+class ChallengeParticipant(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenge.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    join_date = db.Column(db.DateTime, default=datetime.utcnow)
+    current_value = db.Column(db.Float, default=0)  # Current progress towards target
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+    completed = db.Column(db.Boolean, default=False)
+    completion_date = db.Column(db.DateTime)
+
+    # Relationship to access client details
+    client = db.relationship('Client', backref='challenge_participations')
+
+    def update_progress(self, new_value):
+        """Update participant's progress in the challenge"""
+        self.current_value = new_value
+        self.last_updated = datetime.utcnow()
+
+        # Check if challenge is completed
+        challenge = Challenge.query.get(self.challenge_id)
+        if challenge and new_value >= challenge.target_value and not self.completed:
+            self.completed = True
+            self.completion_date = datetime.utcnow()
+
+            # Award points to client
+            self.client.points += challenge.reward_points
+
+
+class LeaderboardEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    category = db.Column(db.String(50), nullable=False)  # global, monthly, challenge
+    points = db.Column(db.Integer, default=0)
+    rank = db.Column(db.Integer)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+    entry_metadata = db.Column(db.JSON)  # Store additional ranking information
+
+    # Relationship
+    client = db.relationship('Client', backref='leaderboard_entries')
+
+    @classmethod
+    def update_rankings(cls, category):
+        """Update rankings for a specific leaderboard category"""
+        entries = cls.query\
+            .filter_by(category=category)\
+            .order_by(cls.points.desc())\
+            .all()
+
+        for index, entry in enumerate(entries, 1):
+            entry.rank = index
+            entry.last_updated = datetime.utcnow()

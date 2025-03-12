@@ -245,7 +245,7 @@ with app.app_context():
     from models import (
         Trainer, Client, Plan, ProgressLog, ExerciseProgression,
         MealIngredient, SubstitutionRule, DietaryPreference, MealPlan,
-        ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement, FitnessResource, GoalProgress # Added Achievement and ClientAchievement and FitnessResource and GoalProgress
+        ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement, FitnessResource, GoalProgress, Challenge, ChallengeParticipant, LeaderboardEntry # Added Achievement and ClientAchievement and FitnessResource and GoalProgress
     )
     db.create_all()
     create_sample_resources()
@@ -880,7 +880,7 @@ def generate_workout_schedule(fitness_level, focus_areas, weekly_frequency):
                             'reps': '8-12',
                             'rest': '60 sec'
                         }
-                        for exercise in focus_area_exercises[:2]  # Pick 2 exercises per area
+                        for exercise in focus_area_exercises[:2]  # Pick 2 exercisesper area
                     ])
 
             weekly_workouts.append(workout)
@@ -1543,6 +1543,155 @@ def adjust_workout(client_id):
         }), 500
 
 # Add these routes after your existing routes
+
+@app.route('/challenges')
+def challenges():
+    """Display social challenges and leaderboard"""
+    try:
+        # Get active challenges
+        active_challenges = Challenge.query\
+            .filter(Challenge.end_date > datetime.utcnow())\
+            .filter_by(status='active')\
+            .order_by(Challenge.created_at.desc())\
+            .all()
+
+        # Get user's joined challenges
+        if 'client_id' in session:
+            user_challenges = Client.query.get(session['client_id'])\
+                .participated_challenges.all()
+        else:
+            user_challenges = []
+
+        # Get global leaderboard
+        leaderboard = LeaderboardEntry.query\
+            .filter_by(category='global')\
+            .order_by(LeaderboardEntry.rank)\
+            .limit(10)\
+            .all()
+
+        return render_template('challenges.html',
+                            active_challenges=active_challenges,
+                            user_challenges=user_challenges,
+                            leaderboard=leaderboard,
+                            current_user={'id': session.get('client_id')})
+
+    except Exception as e:
+        logging.error(f"Error loading challenges page: {str(e)}")
+        flash('Error loading challenges. Please try again.', 'danger')
+        return redirect(url_for('index'))
+
+@app.route('/challenge/create', methods=['POST'])
+def create_challenge():
+    """Create a new social challenge"""
+    if 'client_id' not in session:
+        return jsonify({'success': False, 'error': 'Please log in first'}), 401
+
+    try:
+        data = request.get_json()
+
+        # Create new challenge
+        challenge = Challenge(
+            name=data['name'],
+            description=data['description'],
+            challenge_type=data['challenge_type'],
+            target_value=float(data['target_value']),
+            start_date=datetime.utcnow(),
+            end_date=datetime.strptime(data['end_date'], '%Y-%m-%d'),
+            created_by=session['client_id']
+        )
+
+        db.session.add(challenge)
+
+        # Add creator as first participant
+        participant = ChallengeParticipant(
+            challenge_id=challenge.id,
+            client_id=session['client_id']
+        )
+        db.session.add(participant)
+
+        # Log activity
+        log_activity(
+            client_id=session['client_id'],
+            activity_type='challenge_created',
+            description=f'Created new challenge: {challenge.name}',
+            icon='flag',
+            is_milestone=True
+        )
+
+        db.session.commit()
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        logging.error(f"Error creating challenge: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/challenge/<int:challenge_id>/join', methods=['POST'])
+def join_challenge(challenge_id):
+    """Join an existing challenge"""
+    if 'client_id' not in session:
+        return jsonify({'success': False, 'error': 'Please log in first'}), 401
+
+    try:
+        challenge = Challenge.query.get_or_404(challenge_id)
+
+        # Check if already joined
+        existing = ChallengeParticipant.query.filter_by(
+            challenge_id=challenge_id,
+            client_id=session['client_id']
+        ).first()
+
+        if existing:
+            return jsonify({'success': False, 'error': 'Already joined this challenge'}), 400
+
+        # Join challenge
+        participant = ChallengeParticipant(
+            challenge_id=challenge_id,
+            client_id=session['client_id']
+        )
+        db.session.add(participant)
+
+        # Log activity
+        log_activity(
+            client_id=session['client_id'],
+            activity_type='challenge_joined',
+            description=f'Joined challenge: {challenge.name}',
+            icon='users'
+        )
+
+        db.session.commit()
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        logging.error(f"Error joining challenge: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/challenge/<int:challenge_id>/leaderboard')
+def challenge_leaderboard(challenge_id):
+    """Get leaderboard for a specific challenge"""
+    try:
+        challenge = Challenge.query.get_or_404(challenge_id)
+        leaderboard = challenge.get_leaderboard()
+
+        return jsonify({
+            'success': True,
+            'leaderboard': [
+                {
+                    'rank': index + 1,
+                    'client_name': entry.client.name,
+                    'current_value': entry.current_value,
+                    'completed': entry.completed
+                }
+                for index, entry in enumerate(leaderboard)
+            ]
+        })
+
+    except Exception as e:
+        logging.error(f"Error getting challenge leaderboard: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/achievement/<int:achievement_id>/share-preview')
 def achievement_share_preview(achievement_id):

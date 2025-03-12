@@ -93,7 +93,7 @@ with app.app_context():
     from models import (
         Trainer, Client, Plan, ProgressLog, ExerciseProgression,
         MealIngredient, SubstitutionRule, DietaryPreference, MealPlan,
-        ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement, FitnessResource # Added Achievement and ClientAchievement and FitnessResource
+        ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement, FitnessResource, GoalProgress # Added Achievement and ClientAchievement and FitnessResource and GoalProgress
     )
     db.create_all()
     create_sample_resources() # Add this line here
@@ -333,70 +333,91 @@ def dashboard():
 
         # Calculate dashboard statistics
         total_clients = len(clients)
-
-        # Calculate weekly workouts
-        one_week_ago = datetime.utcnow() - timedelta(days=7)
-        weekly_workouts = ProgressLog.query.filter(
-            ProgressLog.log_date >= one_week_ago,
-            ProgressLog.workout_completed == True
-        ).count()
-
-        # Calculate improving clients percentage
         improving_clients = 0
         completion_rate = 0
+
+        # Prepare data for visualizations
+        progress_data = {
+            'weekly_workouts': [0] * 7,  # Last 7 days
+            'goal_progress': [],
+            'client_improvements': {
+                'improving': 0,
+                'maintaining': 0,
+                'declining': 0
+            },
+            'completion_by_type': {
+                'strength': 0,
+                'cardio': 0,
+                'flexibility': 0
+            }
+        }
+
+        # Calculate statistics and collect visualization data
+        one_week_ago = datetime.utcnow() - timedelta(days=7)
 
         if total_clients > 0:
             for client in clients:
                 # Get client's progress logs
-                progress_logs = ProgressLog.query.filter_by(client_id=client.id).order_by(ProgressLog.log_date.desc()).all()
-                logs_data = [
-                    {
-                        'log_date': log.log_date.isoformat(),
-                        'workout_completed': log.workout_completed,
-                        'exercise_data': log.exercise_data,
-                        'metrics': log.metrics
-                    }
-                    for log in progress_logs
-                ]
+                progress_logs = ProgressLog.query.filter_by(client_id=client.id)\
+                    .filter(ProgressLog.log_date >= one_week_ago)\
+                    .order_by(ProgressLog.log_date.desc())\
+                    .all()
 
-                if logs_data:
-                    completion_rate += sum(1 for log in logs_data if log['workout_completed']) / len(logs_data)
+                # Process weekly workout data
+                for log in progress_logs:
+                    if log.workout_completed:
+                        day_index = (datetime.utcnow() - log.log_date).days
+                        if 0 <= day_index < 7:
+                            progress_data['weekly_workouts'][day_index] += 1
 
-                    # Get progression data
-                    progression_data = [
-                        {
-                            'exercise_name': prog.exercise_name,
-                            'progression_data': prog.progression_data,
-                            'current_level': prog.current_level,
-                            'next_milestone': prog.next_milestone
-                        }
-                        for prog in ExerciseProgression.query.filter_by(client_id=client.id).all()
-                    ]
+                        # Track workout types
+                        if log.exercise_data:
+                            for exercise in log.exercise_data:
+                                exercise_type = exercise.get('type', 'strength')
+                                progress_data['completion_by_type'][exercise_type] = \
+                                    progress_data['completion_by_type'].get(exercise_type, 0) + 1
 
-                    # Analyze progress
-                    insights = progression_tracker.analyze_client_progress(
+                # Calculate completion rate
+                if progress_logs:
+                    client_completion = sum(1 for log in progress_logs if log.workout_completed) / len(progress_logs)
+                    completion_rate += client_completion
+
+                # Get client's goals and progress
+                goals = Goal.query.filter_by(client_id=client.id).all()
+                for goal in goals:
+                    latest_progress = GoalProgress.query.filter_by(goal_id=goal.id)\
+                        .order_by(GoalProgress.recorded_date.desc())\
+                        .first()
+
+                    if latest_progress:
+                        progress_percentage = (latest_progress.recorded_value / goal.target_value) * 100
+                        progress_data['goal_progress'].append({
+                            'client_name': client.name,
+                            'goal_type': goal.goal_type,
+                            'progress': min(progress_percentage, 100)
+                        })
+
+                # Analyze improvement trend
+                if progress_logs:
+                    trend = progression_tracker.analyze_client_progress(
                         client.id,
-                        logs_data,
-                        progression_data
-                    )
+                        progress_logs,
+                        []  # Empty progression data as we only need trend
+                    )['performance_trends']['trend']
 
-                    if insights['performance_trends']['trend'] == 'improving':
+                    progress_data['client_improvements'][trend] = \
+                        progress_data['client_improvements'].get(trend, 0) + 1
+
+                    if trend == 'improving':
                         improving_clients += 1
 
             improving_clients = (improving_clients / total_clients) * 100
             completion_rate = (completion_rate / total_clients) * 100
 
-        stats = {
-            'total_clients': total_clients,
-            'weekly_workouts': weekly_workouts,
-            'improving_clients': round(improving_clients),
-            'completion_rate': round(completion_rate)
-        }
-
-        # Get activity feed with enhanced details
+        # Get activity feed
         activities = ActivityFeed.query\
             .order_by(ActivityFeed.created_at.desc())\
-            .limit(20)\
+            .limit(10)\
             .all()
 
         activity_feed = []
@@ -410,94 +431,27 @@ def dashboard():
                 'timestamp': activity.created_at.strftime('%Y-%m-%d %H:%M'),
                 'priority': activity.priority,
                 'is_milestone': activity.is_milestone,
-                'extra_data': activity.extra_data # Changed metadata to extra_data
+                'extra_data': activity.extra_data
             })
 
-        # Add last activity to clients
-        for client in clients:
-            latest_activity = ActivityFeed.query\
-                .filter_by(client_id=client.id)\
-                .order_by(ActivityFeed.created_at.desc())\
-                .first()
-
-            client.last_activity = latest_activity.created_at.strftime('%Y-%m-%d %H:%M') if latest_activity else None
-
-            # Get client's trend
-            progress_logs = ProgressLog.query.filter_by(client_id=client.id).order_by(ProgressLog.log_date.desc()).all()
-            if progress_logs:
-                logs_data = [
-                    {
-                        'log_date': log.log_date.isoformat(),
-                        'workout_completed': log.workout_completed,
-                        'exercise_data': log.exercise_data,
-                        'metrics': log.metrics
-                    }
-                    for log in progress_logs
-                ]
-                insights = progression_tracker.analyze_client_progress(
-                    client.id,
-                    logs_data,
-                    []  # Empty progression data as we only need overall trend
-                )
-                client.trend = insights['performance_trends']['trend']
-            else:
-                client.trend = 'neutral'
+        # Prepare summary stats
+        stats = {
+            'total_clients': total_clients,
+            'weekly_workouts': sum(progress_data['weekly_workouts']),
+            'improving_clients': round(improving_clients),
+            'completion_rate': round(completion_rate)
+        }
 
         return render_template('dashboard.html',
-                           clients=clients,
-                           stats=stats,
-                           activity_feed=activity_feed)
+                            clients=clients,
+                            stats=stats,
+                            activity_feed=activity_feed,
+                            progress_data=progress_data)
 
     except Exception as e:
         logging.error(f"Error loading dashboard: {str(e)}")
         flash('Error loading dashboard data. Please try again.', 'danger')
         return redirect(url_for('index'))
-
-@app.route('/api/client/<int:client_id>')
-def get_client(client_id):
-    try:
-        logging.debug(f"Fetching client data for client_id: {client_id}") #Added logging
-        client = Client.query.get_or_404(client_id)
-        return jsonify({
-            'id': client.id,
-            'name': client.name,
-            'goal': client.goal,
-            'fitness_level': client.fitness_level
-        })
-    except Exception as e:
-        logging.error(f"Error fetching client data: {str(e)}")
-        return jsonify({'error': 'Failed to fetch client data'}), 500
-
-@app.route('/api/client/<int:client_id>', methods=['PUT'])
-def update_client(client_id):
-    try:
-        client = Client.query.get_or_404(client_id)
-        data = request.get_json()
-
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-
-        logging.debug(f"Updating client {client_id} with data: {data}")
-
-        # Update client fields
-        client.name = data.get('name', client.name)
-        client.goal = data.get('goal', client.goal)
-        client.fitness_level = data.get('fitness_level', client.fitness_level)
-
-        try:
-            db.session.commit()
-            logging.debug(f"Successfully updated client {client_id}")
-            return jsonify({'success': True})
-        except Exception as e:
-            db.session.rollback()
-            logging.error(f"Database error while updating client: {str(e)}")
-            return jsonify({'error': 'Database error occurred'}), 500
-
-    except Exception as e:
-        logging.error(f"Error updating client: {str(e)}")
-        return jsonify({'error': 'Failed to update client'}), 500
-
-# Add these new routes after the existing routes
 
 @app.route('/fitness-quiz')
 def fitness_quiz():

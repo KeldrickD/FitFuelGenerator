@@ -79,9 +79,23 @@
                                     <i data-feather="award" class="feather-small"></i>
                                     Earned {{ progress_map[achievement.id]['earned_at'].strftime('%Y-%m-%d') }}
                                 </span>
-                                <span class="text-success">
-                                    <i data-feather="check-circle" class="feather-small"></i>
-                                </span>
+                                <div class="d-flex gap-2">
+                                    <button onclick="shareAchievement({{ achievement.id }}, 'twitter')" 
+                                            class="btn btn-sm btn-outline-info" 
+                                            title="Share on Twitter">
+                                        <i data-feather="twitter"></i>
+                                    </button>
+                                    <button onclick="shareAchievement({{ achievement.id }}, 'facebook')" 
+                                            class="btn btn-sm btn-outline-primary" 
+                                            title="Share on Facebook">
+                                        <i data-feather="facebook"></i>
+                                    </button>
+                                    <button onclick="shareAchievement({{ achievement.id }}, 'linkedin')" 
+                                            class="btn btn-sm btn-outline-secondary" 
+                                            title="Share on LinkedIn">
+                                        <i data-feather="linkedin"></i>
+                                    </button>
+                                </div>
                             {% else %}
                                 <small class="text-muted">{{ progress_map.get(achievement.id, {}).get('progress', 0)|round|int }}% Complete</small>
                                 <span class="text-muted">{{ achievement.points }} pts</span>
@@ -101,6 +115,22 @@
     </div>
 </div>
 
+<!-- Share Achievement Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shareModalLabel">Share Achievement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center" id="achievementPreview">
+                    <!-- Achievement preview will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -145,5 +175,64 @@ document.addEventListener('DOMContentLoaded', function() {
         feather.replace();
     }
 });
+
+function shareAchievement(achievementId, platform) {
+    // Show loading state in modal
+    const previewDiv = document.getElementById('achievementPreview');
+    previewDiv.innerHTML = `
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    `;
+
+    // Show the modal
+    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+    shareModal.show();
+
+    // Get achievement details and generate share preview
+    fetch(`/achievement/${achievementId}/share-preview`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update modal with achievement preview
+                previewDiv.innerHTML = data.preview_html;
+
+                // Generate sharing URL based on platform
+                let shareUrl = '';
+                const shareText = encodeURIComponent(data.share_text);
+                const achievementUrl = encodeURIComponent(window.location.origin + data.achievement_url);
+
+                switch(platform) {
+                    case 'twitter':
+                        shareUrl = `https://twitter.com/intent/tweet?text=${shareText}&url=${achievementUrl}`;
+                        break;
+                    case 'facebook':
+                        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${achievementUrl}`;
+                        break;
+                    case 'linkedin':
+                        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${achievementUrl}`;
+                        break;
+                }
+
+                // Open sharing window
+                window.open(shareUrl, '_blank', 'width=600,height=400');
+                shareModal.hide();
+            } else {
+                previewDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        Failed to generate achievement preview
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            previewDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    An error occurred while generating the preview
+                </div>
+            `;
+        });
+}
 </script>
 {% endblock %}

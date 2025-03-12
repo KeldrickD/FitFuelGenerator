@@ -1,0 +1,20 @@
+<div class="achievement-share-preview">
+    <div class="card">
+        <div class="card-body text-center">
+            <div class="mb-3">
+                <i data-feather="{{ achievement.icon }}" class="text-success" style="width: 48px; height: 48px;"></i>
+            </div>
+            <h4 class="card-title">{{ achievement.name }}</h4>
+            {% if achievement.level %}
+            <span class="badge bg-info mb-2">{{ achievement.level|title }} Level</span>
+            {% endif %}
+            <p class="card-text">{{ achievement.description }}</p>
+            <div class="text-muted">
+                <small>Earned by {{ client.name }} on {{ earned_date }}</small>
+            </div>
+            <div class="mt-2">
+                <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="FitTracker Logo" style="height: 30px;">
+            </div>
+        </div>
+    </div>
+</div>

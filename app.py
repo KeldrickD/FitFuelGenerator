@@ -885,8 +885,7 @@ def generate_workout_schedule(fitness_level, focus_areas, weekly_frequency):
 
             weekly_workouts.append(workout)
 
-        schedule.append({
-            'week': week + 1,
+        schedule.append({'week': week + 1,
             'workouts': weekly_workouts
         })
 
@@ -1541,6 +1540,47 @@ def adjust_workout(client_id):
         return jsonify({
             'success': False,
             'error': 'Failed to adjust workout plan'
+        }), 500
+
+# Add these routes after your existing routes
+
+@app.route('/achievement/<int:achievement_id>/share-preview')
+def achievement_share_preview(achievement_id):
+    """Generate a preview for sharing an achievement"""
+    try:
+        # Get achievement and client progress details
+        achievement = Achievement.query.get_or_404(achievement_id)
+        client_achievement = ClientAchievement.query.filter_by(
+            achievement_id=achievement_id
+        ).first_or_404()
+        client = Client.query.get_or_404(client_achievement.client_id)
+
+        # Generate preview HTML
+        preview_html = render_template('_achievement_share_preview.html',
+            achievement=achievement,
+            client=client,
+            earned_date=client_achievement.earned_at.strftime('%B %d, %Y')
+        )
+
+        # Generate share text
+        share_text = f"I just earned the {achievement.name} achievement on FitTracker! 🏆"
+        if achievement.level:
+            share_text += f" ({achievement.level.title()} level)"
+
+        return jsonify({
+            'success': True,
+            'preview_html': preview_html,
+            'share_text': share_text,
+            'achievement_url': url_for('achievement_share_preview', 
+                                     achievement_id=achievement_id,
+                                     _external=True)
+        })
+
+    except Exception as e:
+        logging.error(f"Error generating achievement share preview: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to generate achievement preview'
         }), 500
 
 if __name__ == '__main__':

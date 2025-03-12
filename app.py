@@ -249,11 +249,26 @@ def create_plan():
                 'training_days': int(request.form['training_days'])
             }
 
+            # Get client's performance data if available
+            client_performance = None
+            if 'client_id' in session:
+                progress_logs = ProgressLog.query.filter_by(client_id=session['client_id'])\
+                    .order_by(ProgressLog.log_date.desc())\
+                    .limit(10)\
+                    .all()
+
+                if progress_logs:
+                    client_performance = []
+                    for log in progress_logs:
+                        if log.exercise_data:
+                            client_performance.extend(log.exercise_data)
+
             # Generate workout and meal plans
             workout_plan = workout_generator.create_workout_plan(
                 client_data['fitness_level'],
                 client_data['training_days'],
-                client_data['goal']
+                client_data['goal'],
+                client_performance  # Pass performance data to the workout generator
             )
 
             meal_plan = meal_generator.create_meal_plan(

@@ -31,8 +31,8 @@
                 <div class="card-header">
                     <h3 class="card-title">Weekly Workout Completion</h3>
                 </div>
-                <div class="card-body">
-                    <div style="height: 300px; width: 100%; position: relative;">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <div style="width: 100%; height: 300px;">
                         <canvas id="weeklyWorkoutChart"></canvas>
                     </div>
                 </div>
@@ -45,8 +45,8 @@
                 <div class="card-header">
                     <h3 class="card-title">Client Progress Distribution</h3>
                 </div>
-                <div class="card-body">
-                    <div style="height: 300px; width: 100%; position: relative;">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <div style="width: 100%; height: 300px;">
                         <canvas id="clientProgressChart"></canvas>
                     </div>
                 </div>
@@ -59,8 +59,8 @@
                 <div class="card-header">
                     <h3 class="card-title">Exercise Type Distribution</h3>
                 </div>
-                <div class="card-body">
-                    <div style="height: 300px; width: 100%; position: relative;">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <div style="width: 100%; height: 300px;">
                         <canvas id="exerciseTypeChart"></canvas>
                     </div>
                 </div>
@@ -73,8 +73,8 @@
                 <div class="card-header">
                     <h3 class="card-title">Client Goal Progress</h3>
                 </div>
-                <div class="card-body">
-                    <div style="height: 300px; width: 100%; position: relative;">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <div style="width: 100%; height: 300px;">
                         <canvas id="goalProgressChart"></canvas>
                     </div>
                 </div>
@@ -82,7 +82,7 @@
         </div>
     </div>
 
-    <!-- Client List -->
+    <!-- Client List and Activity Feed -->
     <div class="row">
         <div class="col-lg-8">
             <div class="card">
@@ -181,9 +181,12 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-<!-- Load Chart.js from CDN before your script -->
+{% block head %}
+<!-- Add Chart.js to head section -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+{% endblock %}
+
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Feather icons
@@ -191,8 +194,9 @@ document.addEventListener('DOMContentLoaded', function() {
         feather.replace();
     }
 
-    console.log('Initializing charts...'); // Debug log
-    console.log('Progress data:', {{ progress_data|tojson }}); // Debug log
+    // Debug logs
+    console.log('Chart.js version:', Chart.version);
+    console.log('Progress data:', {{ progress_data|tojson|safe }});
 
     // Chart.js Global Configuration
     Chart.defaults.color = '#fff';
@@ -201,165 +205,153 @@ document.addEventListener('DOMContentLoaded', function() {
     Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.1)';
     Chart.defaults.scale.ticks.color = '#fff';
 
-    try {
-        // Weekly Workout Completion Chart
-        const weeklyWorkoutCtx = document.getElementById('weeklyWorkoutChart');
-        console.log('Weekly workout data:', {{ progress_data.weekly_workouts|tojson }}); // Debug log
-
-        if (weeklyWorkoutCtx) {
-            new Chart(weeklyWorkoutCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{
-                        label: 'Completed Workouts',
-                        data: {{ progress_data.weekly_workouts|tojson }},
-                        backgroundColor: 'rgba(var(--bs-primary-rgb), 0.5)',
-                        borderColor: 'var(--bs-primary)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            console.error('Weekly workout chart canvas not found');
+    function initializeChart(id, config) {
+        const canvas = document.getElementById(id);
+        if (!canvas) {
+            console.error(`Canvas element ${id} not found`);
+            return null;
         }
-
-        // Client Progress Distribution Chart
-        const clientProgressCtx = document.getElementById('clientProgressChart');
-        if (clientProgressCtx) {
-            new Chart(clientProgressCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Improving', 'Maintaining', 'Needs Focus'],
-                    datasets: [{
-                        data: [
-                            {{ progress_data.client_improvements.improving }},
-                            {{ progress_data.client_improvements.maintaining }},
-                            {{ progress_data.client_improvements.declining }}
-                        ],
-                        backgroundColor: [
-                            'rgba(var(--bs-success-rgb), 0.5)',
-                            'rgba(var(--bs-info-rgb), 0.5)',
-                            'rgba(var(--bs-warning-rgb), 0.5)'
-                        ],
-                        borderColor: [
-                            'var(--bs-success)',
-                            'var(--bs-info)',
-                            'var(--bs-warning)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-        } else {
-            console.error('Client progress chart canvas not found');
+        try {
+            return new Chart(canvas, config);
+        } catch (error) {
+            console.error(`Error initializing chart ${id}:`, error);
+            return null;
         }
-
-        // Exercise Type Chart
-        const exerciseTypeCtx = document.getElementById('exerciseTypeChart');
-        if (exerciseTypeCtx) {
-            new Chart(exerciseTypeCtx, {
-                type: 'pie',
-                data: {
-                    labels: Object.keys({{ progress_data.completion_by_type|tojson }}),
-                    datasets: [{
-                        data: Object.values({{ progress_data.completion_by_type|tojson }}),
-                        backgroundColor: [
-                            'rgba(var(--bs-primary-rgb), 0.5)',
-                            'rgba(var(--bs-success-rgb), 0.5)',
-                            'rgba(var(--bs-info-rgb), 0.5)'
-                        ],
-                        borderColor: [
-                            'var(--bs-primary)',
-                            'var(--bs-success)',
-                            'var(--bs-info)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-        } else {
-            console.error('Exercise type chart canvas not found');
-        }
-
-        // Goal Progress Chart
-        const goalProgressCtx = document.getElementById('goalProgressChart');
-        const goalProgressData = {{ progress_data.goal_progress|tojson }};
-        if (goalProgressCtx) {
-            new Chart(goalProgressCtx, {
-                type: 'bar',
-                data: {
-                    labels: goalProgressData.map(item => item.client_name),
-                    datasets: [{
-                        label: 'Goal Progress (%)',
-                        data: goalProgressData.map(item => item.progress),
-                        backgroundColor: 'rgba(var(--bs-info-rgb), 0.5)',
-                        borderColor: 'var(--bs-info)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            console.error('Goal progress chart canvas not found');
-        }
-    } catch (error) {
-        console.error('Error initializing charts:', error);
     }
+
+    // Weekly Workout Chart
+    initializeChart('weeklyWorkoutChart', {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Completed Workouts',
+                data: {{ progress_data.weekly_workouts|tojson|safe }},
+                backgroundColor: 'rgba(var(--bs-primary-rgb), 0.5)',
+                borderColor: 'var(--bs-primary)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    // Client Progress Chart
+    initializeChart('clientProgressChart', {
+        type: 'doughnut',
+        data: {
+            labels: ['Improving', 'Maintaining', 'Needs Focus'],
+            datasets: [{
+                data: [
+                    {{ progress_data.client_improvements.improving }},
+                    {{ progress_data.client_improvements.maintaining }},
+                    {{ progress_data.client_improvements.declining }}
+                ],
+                backgroundColor: [
+                    'rgba(var(--bs-success-rgb), 0.5)',
+                    'rgba(var(--bs-info-rgb), 0.5)',
+                    'rgba(var(--bs-warning-rgb), 0.5)'
+                ],
+                borderColor: [
+                    'var(--bs-success)',
+                    'var(--bs-info)',
+                    'var(--bs-warning)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Exercise Type Chart
+    initializeChart('exerciseTypeChart', {
+        type: 'pie',
+        data: {
+            labels: Object.keys({{ progress_data.completion_by_type|tojson|safe }}),
+            datasets: [{
+                data: Object.values({{ progress_data.completion_by_type|tojson|safe }}),
+                backgroundColor: [
+                    'rgba(var(--bs-primary-rgb), 0.5)',
+                    'rgba(var(--bs-success-rgb), 0.5)',
+                    'rgba(var(--bs-info-rgb), 0.5)'
+                ],
+                borderColor: [
+                    'var(--bs-primary)',
+                    'var(--bs-success)',
+                    'var(--bs-info)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Goal Progress Chart
+    const goalProgressData = {{ progress_data.goal_progress|tojson|safe }};
+    initializeChart('goalProgressChart', {
+        type: 'bar',
+        data: {
+            labels: goalProgressData.map(item => item.client_name),
+            datasets: [{
+                label: 'Goal Progress (%)',
+                data: goalProgressData.map(item => item.progress),
+                backgroundColor: 'rgba(var(--bs-info-rgb), 0.5)',
+                borderColor: 'var(--bs-info)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
 });
 </script>
 {% endblock %}

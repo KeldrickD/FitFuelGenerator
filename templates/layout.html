@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+    {% block head %}{% endblock %}
 </head>
 <body>
     <nav class="navbar navbar-expand-lg sticky-top">
@@ -120,6 +121,7 @@
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/tutorial.js') }}"></script>
+    {% block scripts %}{% endblock %}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             try {

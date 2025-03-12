@@ -1,8 +1,8 @@
 import os
 import logging
 import random
-from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify, send_file
 from datetime import datetime, timedelta
+from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify, send_file
 from extensions import db
 from models import (
     Trainer, Client, Plan, ProgressLog, ExerciseProgression,
@@ -11,7 +11,10 @@ from models import (
     FitnessResource, GoalProgress, Challenge, ChallengeParticipant,
     LeaderboardEntry
 )
-from utils import progression_tracker, workout_recommender
+from utils import (
+    progression_tracker, workout_recommender, meal_generator,
+    workout_generator, meal_substitution, pdf_generator
+)
 from utils.ai_meal_planner import generate_ai_meal_plan
 from utils.form_validator import (
     validate_client_registration,
@@ -19,6 +22,9 @@ from utils.form_validator import (
     validate_workout_log,
     validate_challenge_creation
 )
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 
 # Create the app
 app = Flask(__name__)
@@ -33,9 +39,6 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 
 # Initialize the app with the extension
 db.init_app(app)
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
 
 def create_sample_resources():
     """Create initial sample resources if none exist"""
@@ -1814,6 +1817,7 @@ def adjust_workout(client_id):
 # Add these routes after your existing routes
 
 @app.route('/challenges')
+@app.route('/challenges')
 def challenges():
     """Display social challenges and leaderboard"""
     try:
@@ -2213,98 +2217,6 @@ def adjust_workout(client_id):
             'success': False,
             'error': 'Failed to adjust workout plan'
         }), 500
-
-# Add these routes after your existing routes
-
-@app.route('/challenges')
-def challenges():
-    """Display social challenges and leaderboard"""
-    try:
-        # Get active challenges
-        active_challenges = Challenge.query\
-            .filter(Challenge.end_date > datetime.utcnow())\
-            .filter_by(status='active')\
-            .order_by(Challenge.created_at.desc())\
-            .all()
-
-        # Get user's joined challenges
-        user_challenges = []
-        if 'client_id' in session:
-            client = Client.query.get(session['client_id'])
-            if client:
-                user_challenges = client.participated_challenges.all()
-
-        # Get global leaderboard
-        leaderboard = LeaderboardEntry.query\
-            .filter_by(category='global')\
-            .order_by(LeaderboardEntry.rank)\
-            .limit(10)\
-            .all()
-
-        return render_template('challenges.html',
-                            active_challenges=active_challenges,
-                            user_challenges=user_challenges,
-                            leaderboard=leaderboard,
-                            current_user={'id': session.get('client_id')})
-
-    except Exception as e:
-        logging.error(f"Error loading challenges page: {str(e)}")
-        flash('Error loading challenges. Please try again.', 'danger')
-        return redirect(url_for('index'))
-
-@app.route('/challenge/create', methods=['POST'])
-def create_challenge():
-    """Create a new social challenge"""
-    if 'client_id' not in session:
-        return jsonify({'success': False, 'error': 'Please log in first'}), 401
-
-    try:
-        data = request.get_json()
-
-        # Validate challenge data
-        is_valid, errors = validate_challenge_creation(data)
-        if not is_valid:
-            return jsonify({'error': errors}), 400
-
-        # Create challenge
-        challenge = Challenge(
-            name=data['name'],
-            description=data['description'],
-            challenge_type=data['challenge_type'],
-            target_value=float(data['target_value']),
-            start_date=datetime.strptime(data['start_date'], '%Y-%m-%d'),
-            end_date=datetime.strptime(data['end_date'], '%Y-%m-%d'),
-            created_by=session['client_id'],
-            reward_points=data.get('reward_points', 100),
-            rules=data.get('rules', {})
-        )
-        db.session.add(challenge)
-
-        # Add creator as first participant
-        participant = ChallengeParticipant(
-            challenge_id=challenge.id,
-            client_id=session['client_id']
-        )
-        db.session.add(participant)
-
-        # Log activity
-        log_activity(
-            client_id=session['client_id'],
-            activity_type='challenge_created',
-            description=f"Created new challenge: {data['name']}",
-            icon='award'
-        )
-
-        db.session.commit()
-        return jsonify({
-            'success': True,
-            'challenge_id': challenge.id,
-            'message': 'Challenge created successfully'
-        })
-
-    except Exception as e:
-        logging.error(f"Error creating challenge: {str(e)}")
-        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

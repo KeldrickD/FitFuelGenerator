@@ -880,7 +880,7 @@ def generate_workout_schedule(fitness_level, focus_areas, weekly_frequency):
                             'reps': '8-12',
                             'rest': '60 sec'
                         }
-                        for exercise in focus_area_exercises[:2]  # Pick 2 exercisesper area
+                        for exercise in focus_area_exercises[:2]  # Pick 2 exercises per area
                     ])
 
             weekly_workouts.append(workout)
@@ -1556,11 +1556,11 @@ def challenges():
             .all()
 
         # Get user's joined challenges
+        user_challenges = []
         if 'client_id' in session:
-            user_challenges = Client.query.get(session['client_id'])\
-                .participated_challenges.all()
-        else:
-            user_challenges = []
+            client = Client.query.get(session['client_id'])
+            if client:
+                user_challenges = client.participated_challenges.all()
 
         # Get global leaderboard
         leaderboard = LeaderboardEntry.query\

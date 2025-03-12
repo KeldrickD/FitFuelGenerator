@@ -331,6 +331,55 @@ def dashboard():
         # Get all clients
         clients = Client.query.all()
 
+        # For testing, if no clients exist, add some sample data
+        if not clients:
+            logging.info("No clients found, adding sample data")
+            # Add a sample client
+            client = Client(
+                name="Sample Client",
+                trainer_id=1,
+                fitness_level="intermediate",
+                goal="weight_loss"
+            )
+            db.session.add(client)
+            db.session.flush()
+
+            # Add sample progress logs
+            for i in range(7):
+                log = ProgressLog(
+                    client_id=client.id,
+                    log_date=datetime.utcnow() - timedelta(days=i),
+                    workout_completed=True,
+                    exercise_data=[
+                        {'type': 'strength', 'name': 'Push-ups', 'sets': 3, 'reps': 10},
+                        {'type': 'cardio', 'name': 'Running', 'duration': 30}
+                    ],
+                    metrics={'weight': 70, 'body_fat': 20}
+                )
+                db.session.add(log)
+
+            # Add sample goal
+            goal = Goal(
+                client_id=client.id,
+                goal_type='weight_loss',
+                target_value=65,
+                start_date=datetime.utcnow().date(),
+                target_date=(datetime.utcnow() + timedelta(days=90)).date(),
+                description='Lose 5kg in 3 months'
+            )
+            db.session.add(goal)
+
+            # Add sample goal progress
+            progress = GoalProgress(
+                goal_id=goal.id,
+                recorded_value=68,
+                recorded_date=datetime.utcnow()
+            )
+            db.session.add(progress)
+
+            db.session.commit()
+            clients = Client.query.all()  # Refresh clients list
+
         # Calculate dashboard statistics
         total_clients = len(clients)
         improving_clients = 0
@@ -441,6 +490,8 @@ def dashboard():
             'improving_clients': round(improving_clients),
             'completion_rate': round(completion_rate)
         }
+
+        logging.info(f"Dashboard data prepared: {progress_data}")  # Debug log
 
         return render_template('dashboard.html',
                             clients=clients,
@@ -786,7 +837,8 @@ def save_meal_preferences():
             meal_count_per_day=int(data.get('mealCount')),
             calorie_target=int(data.get('calorieTarget')),
             macro_targets={},  # You can add macro calculations based on diet type
-            meal_timing={}  # You can format meal timing data here
+            meal_timing={}  # You can format meal timing data<replit_final_file>
+            # You can format meal timing data here
         )
 
         db.session.add(preference)

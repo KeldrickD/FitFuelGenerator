@@ -837,8 +837,8 @@ def save_meal_preferences():
             meal_count_per_day=int(data.get('mealCount')),
             calorie_target=int(data.get('calorieTarget')),
             macro_targets={},  # You can add macro calculations based on diet type
-            meal_timing={}  # You can format meal timing data<replit_final_file>
-            # You can format meal timing data here
+            meal_timing={}  # You can format meal timing data
+            #            # You can format meal timing data here
         )
 
         db.session.add(preference)
@@ -1071,25 +1071,26 @@ def check_achievements():
 
 @app.route('/client/<int:client_id>/achievements')
 def view_achievements(client_id):
+    """Display client achievements and badges"""
     try:
         client = Client.query.get_or_404(client_id)
 
-        # Get all achievements and client's progress
+        # Get all achievements and client's earned achievements
         achievements = Achievement.query.all()
         client_achievements = ClientAchievement.query.filter_by(client_id=client_id).all()
 
-        # Get personalized recommendations
-        recommended_achievements = Achievement.get_recommendations(client_id)
-
-        # Create achievement progress map
+        # Create a progress map for each achievement
         progress_map = {
-            ca.achievement_id: {
-                'progress': ca.progress,
-                'completed': ca.completed,
-                'earned_at': ca.earned_at
+            achievement.achievement_id: {
+                'progress': achievement.progress,
+                'completed': achievement.completed,
+                'earned_at': achievement.earned_at
             }
-            for ca in client_achievements
+            for achievement in client_achievements
         }
+
+        # Get recommended achievements
+        recommended_achievements = Achievement.get_recommendations(client_id)
 
         return render_template(
             'achievements.html',
@@ -1102,7 +1103,7 @@ def view_achievements(client_id):
     except Exception as e:
         logging.error(f"Error viewing achievements: {str(e)}")
         flash('Error loading achievements. Please try again.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('clients_list'))
 
 def calculate_achievement_progress(client, achievement):
     """Calculate progress towards an achievement based on its criteria"""

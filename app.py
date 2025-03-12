@@ -163,6 +163,61 @@ def create_sample_client_achievements(client_id):
         logging.error(f"Error creating sample client achievements: {str(e)}")
         db.session.rollback()
 
+# Add this to the create_sample_resources function
+def create_sample_client():
+    """Create a sample client with workout history if none exists"""
+    try:
+        # Check if we already have clients
+        if Client.query.first():
+            return
+
+        # Create sample client
+        client = Client(
+            name="John Smith",
+            fitness_level="intermediate",
+            goal="muscle_gain",
+            diet_preference="balanced",
+            trainer_id=1  # Default trainer ID
+        )
+        db.session.add(client)
+        db.session.flush()  # Get client.id
+
+        # Create sample workout history
+        for i in range(5):  # Last 5 days of workouts
+            log = ProgressLog(
+                client_id=client.id,
+                log_date=datetime.utcnow() - timedelta(days=i),
+                workout_completed=True,
+                exercise_data=[
+                    {
+                        'name': 'Barbell Squats',
+                        'sets': 4,
+                        'reps': 10,
+                        'weight': 95,
+                        'type': 'strength'
+                    },
+                    {
+                        'name': 'Push-ups',
+                        'sets': 3,
+                        'reps': 15,
+                        'type': 'strength'
+                    }
+                ],
+                metrics={
+                    'intensity': 8,
+                    'volume': 120,
+                    'consistency': 1
+                }
+            )
+            db.session.add(log)
+
+        db.session.commit()
+        logging.info(f"Created sample client with ID: {client.id}")
+
+    except Exception as e:
+        logging.error(f"Error creating sample client: {str(e)}")
+        db.session.rollback()
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -193,6 +248,7 @@ with app.app_context():
     db.create_all()
     create_sample_resources()
     create_sample_achievements()
+    create_sample_client()  # Add this line
 
     # Create sample client achievements for existing clients
     clients = Client.query.all()
@@ -833,7 +889,7 @@ def generate_meal_schedule(dietary_restrictions, meals_per_day):
     return schedule
 
 def calculate_macros(meal, diet_type):
-    """Calculate approximate macros for a meal"""
+    """Calculate approximate macros fora meal"""
     # Simplified macro calculations
     base_macros = {
         'standard': {'protein': 30, 'carbs': 40, 'fats': 30},

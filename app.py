@@ -1,5 +1,6 @@
 import os
 import logging
+import random # Added import for random.choice
 from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
@@ -398,7 +399,7 @@ def generate_pdf():
 @app.route('/client/<int:client_id>/progress')
 def view_progress(client_id):
     try:
-        logging.debug(f"Viewing progress for client_id: {client_id}") #Added logging
+        logging.debug(f"Viewing progress for client_id: {client_id}")
         client = Client.query.get_or_404(client_id)
 
         # Fetch progress logs and exercise progressions
@@ -421,7 +422,9 @@ def view_progress(client_id):
                 'exercise_name': prog.exercise_name,
                 'progression_data': prog.progression_data,
                 'current_level': prog.current_level,
-                'next_milestone': prog.next_milestone
+                'next_milestone': {
+                    'description': prog.next_milestone.get('description', 'Next level') if prog.next_milestone else 'Keep progressing'
+                } if hasattr(prog, 'next_milestone') else {'description': 'Keep progressing'}
             }
             for prog in exercise_progressions
         ]
@@ -433,18 +436,30 @@ def view_progress(client_id):
             progression_data
         )
 
+        # Convert ExerciseProgression objects to serializable format
+        serializable_progressions = []
+        for prog in exercise_progressions:
+            serializable_prog = {
+                'exercise_name': prog.exercise_name,
+                'current_level': prog.current_level,
+                'next_milestone': {
+                    'description': prog.next_milestone.get('description', 'Next level') if prog.next_milestone else 'Keep progressing'
+                } if hasattr(prog, 'next_milestone') else {'description': 'Keep progressing'}
+            }
+            serializable_progressions.append(serializable_prog)
+
         return render_template(
             'progress.html',
             client=client,
             progress_logs=progress_logs,
-            exercise_progressions=exercise_progressions,
+            exercise_progressions=serializable_progressions,
             insights=insights
         )
 
     except Exception as e:
         logging.error(f"Error viewing progress: {str(e)}")
         flash('Error loading progress data. Please try again.', 'danger')
-        return redirect(url_for('index'))
+        return redirect(url_for('clients_list'))
 
 @app.route('/client/<int:client_id>/log-progress', methods=['POST'])
 def log_progress():
@@ -863,29 +878,31 @@ def generate_meal_schedule(dietary_restrictions, meals_per_day):
         }
     }
 
-    # Determine diet type based on restrictions
     diet_type = 'standard'
     if 'vegan' in dietary_restrictions:
-        diet_type = 'vegan'
+                diet_type = 'vegan'
     elif 'vegetarian' in dietary_restrictions:
         diet_type = 'vegetarian'
 
     schedule = []
-    meal_times = ['breakfast', 'lunch', 'dinner'][:meals_per_day]
-
-    # Generate 7 days of meals
-    for day in range(7):
-        daily_meals = {}
-        for meal_time in meal_times:
-            daily_meals[meal_time] = {
-                'suggestion': meal_templates[diet_type][meal_time][day % 3],
-                'macros': calculate_macros(meal_templates[diet_type][meal_time][day % 3], diet_type)
-            }
+    for week in range(4):
+        weekly_meals = []
+        for day in range(7):
+            meals = []
+            for meal in range(meals_per_day):
+                meal_template = meal_templates[diet_type].get('breakfast', [])
+                meals.append({
+                    'name': random.choice(meal_template),
+                    'macros': calculate_macros(meal_template[0], diet_type)
+                })
+            weekly_meals.append({
+                'day': day + 1,
+                'meals': meals
+            })
         schedule.append({
-            'day': day + 1,
-            'meals': daily_meals
+            'week': week + 1,
+            'meals': weekly_meals
         })
-
     return schedule
 
 def calculate_macros(meal, diet_type):

@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Optional
 
 def analyze_performance_metrics(exercise_data: List[Dict]) -> Dict:
@@ -12,7 +12,7 @@ def analyze_performance_metrics(exercise_data: List[Dict]) -> Dict:
 
         # Calculate performance trends
         completion_rate = sum(1 for entry in exercise_data if entry.get('completed', False)) / len(exercise_data)
-        
+
         # Analyze progression in reps and weights
         progression_metrics = {
             'reps_trend': 0,
@@ -23,15 +23,15 @@ def analyze_performance_metrics(exercise_data: List[Dict]) -> Dict:
         for i in range(1, len(exercise_data)):
             current = exercise_data[i]
             previous = exercise_data[i-1]
-            
+
             # Compare reps
             if current.get('reps', 0) > previous.get('reps', 0):
                 progression_metrics['reps_trend'] += 1
-            
+
             # Compare weights/resistance
             if current.get('weight', 0) > previous.get('weight', 0):
                 progression_metrics['weight_trend'] += 1
-            
+
             # Consider form quality if available
             if current.get('form_rating', 0) > previous.get('form_rating', 0):
                 progression_metrics['form_quality'] += 1
@@ -74,7 +74,7 @@ def adjust_exercise_difficulty(
     try:
         # Analyze recent performance
         analysis = analyze_performance_metrics(performance_data)
-        
+
         if analysis['confidence'] < 50:  # Not enough data for confident adjustment
             return exercise
 
@@ -99,7 +99,7 @@ def adjust_exercise_difficulty(
 
         if analysis['recommendation'] != 'maintain':
             direction = analysis['recommendation']
-            
+
             # Adjust exercise parameters
             current_sets = int(exercise.get('sets', 3))
             current_reps = int(exercise.get('reps', 10))
@@ -118,7 +118,8 @@ def adjust_exercise_difficulty(
                     exercise['weight'] = current_weight + multipliers['decrease']['weight']
 
             # Add adjustment metadata
-            exercise['last_adjusted'] = datetime.utcnow().isoformat()
+            exercise['adjusted'] = True
+            exercise['adjustment_type'] = direction
             exercise['adjustment_reason'] = f"Difficulty {direction}d based on performance analysis (confidence: {analysis['confidence']}%)"
 
         return exercise
@@ -172,5 +173,5 @@ def get_difficulty_progression(fitness_level: str, exercise_type: str) -> Dict:
             }
         }
     }
-    
+
     return progression_guidelines.get(fitness_level, {}).get(exercise_type, progression_guidelines['beginner']['strength'])

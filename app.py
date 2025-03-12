@@ -32,7 +32,7 @@ with app.app_context():
     from models import (
         Trainer, Client, Plan, ProgressLog, ExerciseProgression,
         MealIngredient, SubstitutionRule, DietaryPreference, MealPlan,
-        ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement # Added Achievement and ClientAchievement
+        ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement, FitnessResource # Added Achievement and ClientAchievement and FitnessResource
     )
     db.create_all()
 
@@ -840,7 +840,7 @@ def find_ingredient_substitutes():
             return jsonify({'error': 'Ingredient name is required'}), 400
 
         # Get client preferences and allergies
-        client= Client.query.get_or_404(client_id) if client_id else None
+        client= Client.query.getor_404(client_id) if client_id else None
         preferences = {
             'diet_type': client.diet_preference if client else None,
             'budget_conscious': bool(budget_limit),
@@ -1121,6 +1121,43 @@ def generate_client_report(client_id):
         logging.error(f"Error generating client report: {str(e)}")
         flash('Error generating report. Pleasetry again.', 'danger')
         return redirect(url_for('view_progress', client_id=client_id))
+
+@app.route('/resources')
+def resource_library():
+    """Display the fitness resource library with search functionality"""
+    try:
+        query = request.args.get('query', '')
+        resource_type = request.args.get('type')
+        difficulty = request.args.get('difficulty')
+
+        # Search resources with filters
+        resources = FitnessResource.search(
+            query=query,
+            resource_type=resource_type,
+            difficulty=difficulty
+        )
+
+        return render_template('resource_library.html', resources=resources)
+    except Exception as e:
+        logging.error(f"Error accessing resource library: {str(e)}")
+        flash('Error loading resources. Please try again.', 'danger')
+        return redirect(url_for('index'))
+
+@app.route('/resource/<int:resource_id>')
+def view_resource(resource_id):
+    """Display a single fitness resource"""
+    try:
+        resource = FitnessResource.query.get_or_404(resource_id)
+
+        # Increment view count
+        resource.views += 1
+        db.session.commit()
+
+        return render_template('view_resource.html', resource=resource)
+    except Exception as e:
+        logging.error(f"Error viewing resource: {str(e)}")
+        flash('Error loading resource. Please try again.', 'danger')
+        return redirect(url_for('resource_library'))
 
 if __name__ == '__main__':
     app.run(debug=True)

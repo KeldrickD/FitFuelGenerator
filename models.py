@@ -319,3 +319,40 @@ class ClientAchievement(db.Model):
     # Add relationships
     client = db.relationship('Client', backref=db.backref('achievements', lazy=True))
     achievement = db.relationship('Achievement')
+
+class FitnessResource(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    resource_type = db.Column(db.String(50), nullable=False)  # 'video' or 'guide'
+    content_url = db.Column(db.String(500))
+    content = db.Column(db.Text)  # For guides or embedded video content
+    difficulty_level = db.Column(db.String(20))  # beginner, intermediate, advanced
+    categories = db.Column(db.JSON, default=list)  # Store categories/tags as a list
+    thumbnail_url = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    views = db.Column(db.Integer, default=0)
+    likes = db.Column(db.Integer, default=0)
+
+    @classmethod
+    def search(cls, query, resource_type=None, difficulty=None, category=None):
+        """Search fitness resources with filters"""
+        base_query = cls.query
+
+        if query:
+            search_filter = or_(
+                cls.title.ilike(f'%{query}%'),
+                cls.description.ilike(f'%{query}%')
+            )
+            base_query = base_query.filter(search_filter)
+
+        if resource_type:
+            base_query = base_query.filter(cls.resource_type == resource_type)
+
+        if difficulty:
+            base_query = base_query.filter(cls.difficulty_level == difficulty)
+
+        if category:
+            base_query = base_query.filter(cls.categories.contains([category]))
+
+        return base_query.order_by(cls.created_at.desc()).all()

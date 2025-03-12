@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('resource_library') }}">Resource Library</a></li>
+            <li class="breadcrumb-item active">{{ resource.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="card-title mb-4">{{ resource.title }}</h2>
+            
+            <div class="d-flex align-items-center mb-4">
+                <span class="badge bg-primary me-2">{{ resource.resource_type }}</span>
+                <span class="badge bg-secondary me-2">{{ resource.difficulty_level }}</span>
+                <small class="text-muted ms-auto">
+                    <i data-feather="eye" class="me-1"></i> {{ resource.views }} views
+                </small>
+            </div>
+
+            {% if resource.resource_type == 'video' and resource.content_url %}
+                <div class="ratio ratio-16x9 mb-4">
+                    <iframe src="{{ resource.content_url }}" 
+                            allowfullscreen
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+                    </iframe>
+                </div>
+            {% elif resource.thumbnail_url %}
+                <img src="{{ resource.thumbnail_url }}" 
+                     class="img-fluid rounded mb-4" 
+                     alt="{{ resource.title }}">
+            {% endif %}
+
+            <div class="mb-4">
+                {{ resource.description | safe }}
+            </div>
+
+            {% if resource.content %}
+                <div class="content-section">
+                    {{ resource.content | safe }}
+                </div>
+            {% endif %}
+
+            <div class="mt-4">
+                {% for category in resource.categories %}
+                    <span class="badge bg-light text-dark me-2">{{ category }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('resource_library') }}" class="btn btn-outline-primary">
+            <i data-feather="arrow-left" class="me-2"></i>Back to Library
+        </a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    });
+</script>
+{% endblock %}

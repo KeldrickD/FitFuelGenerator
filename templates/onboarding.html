@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="progress mb-4">
+                        <div class="progress-bar" role="progressbar" style="width: {{ progress }}%"></div>
+                    </div>
+
+                    <form id="onboardingForm" method="POST" action="{{ url_for('onboarding') }}">
+                        <!-- Step 1: Basic Info -->
+                        <div class="step" id="step1" {% if current_step != 1 %}style="display: none;"{% endif %}>
+                            <h3>Welcome to Your Fitness Journey!</h3>
+                            <p class="text-muted">Let's start by getting to know you better.</p>
+                            
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Your Name</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Fitness Level -->
+                        <div class="step" id="step2" {% if current_step != 2 %}style="display: none;"{% endif %}>
+                            <h3>Your Fitness Level</h3>
+                            <p class="text-muted">This helps us personalize your workout plans.</p>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Select your current fitness level:</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="fitness_level" value="beginner" id="beginner" required>
+                                    <label class="form-check-label" for="beginner">
+                                        Beginner - New to regular exercise
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="fitness_level" value="intermediate" id="intermediate">
+                                    <label class="form-check-label" for="intermediate">
+                                        Intermediate - Exercise regularly
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="fitness_level" value="advanced" id="advanced">
+                                    <label class="form-check-label" for="advanced">
+                                        Advanced - Very experienced
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Goals -->
+                        <div class="step" id="step3" {% if current_step != 3 %}style="display: none;"{% endif %}>
+                            <h3>Your Fitness Goals</h3>
+                            <p class="text-muted">What do you want to achieve?</p>
+                            
+                            <div class="mb-3">
+                                <label for="goal" class="form-label">Primary Goal</label>
+                                <select class="form-select" id="goal" name="goal" required>
+                                    <option value="">Choose your main goal</option>
+                                    <option value="weight_loss">Weight Loss</option>
+                                    <option value="muscle_gain">Build Muscle</option>
+                                    <option value="endurance">Improve Endurance</option>
+                                    <option value="flexibility">Increase Flexibility</option>
+                                    <option value="general_fitness">General Fitness</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="training_days" class="form-label">Preferred Training Days per Week</label>
+                                <select class="form-select" id="training_days" name="training_days" required>
+                                    <option value="2">2 days</option>
+                                    <option value="3">3 days</option>
+                                    <option value="4">4 days</option>
+                                    <option value="5">5 days</option>
+                                    <option value="6">6 days</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Diet Preferences -->
+                        <div class="step" id="step4" {% if current_step != 4 %}style="display: none;"{% endif %}>
+                            <h3>Dietary Preferences</h3>
+                            <p class="text-muted">Help us create your perfect meal plan.</p>
+                            
+                            <div class="mb-3">
+                                <label for="diet_type" class="form-label">Diet Type</label>
+                                <select class="form-select" id="diet_type" name="diet_type" required>
+                                    <option value="balanced">Balanced</option>
+                                    <option value="high_protein">High Protein</option>
+                                    <option value="low_carb">Low Carb</option>
+                                    <option value="vegan">Vegan</option>
+                                    <option value="vegetarian">Vegetarian</option>
+                                    <option value="keto">Keto</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="allergies" class="form-label">Food Allergies or Restrictions</label>
+                                <input type="text" class="form-control" id="allergies" name="allergies" 
+                                       placeholder="e.g., nuts, dairy, gluten (comma-separated)">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-secondary" id="prevBtn" 
+                                    {% if current_step == 1 %}style="display: none;"{% endif %}>Previous</button>
+                            <button type="button" class="btn btn-primary" id="nextBtn" 
+                                    {% if current_step == 4 %}style="display: none;"{% endif %}>Next</button>
+                            <button type="submit" class="btn btn-success" id="submitBtn" 
+                                    {% if current_step != 4 %}style="display: none;"{% endif %}>Complete Setup</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('onboardingForm');
+    const steps = document.querySelectorAll('.step');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressBar = document.querySelector('.progress-bar');
+    
+    let currentStep = {{ current_step }};
+    const totalSteps = steps.length;
+    
+    function updateStep(step) {
+        steps.forEach((s, index) => {
+            s.style.display = index + 1 === step ? 'block' : 'none';
+        });
+        
+        progressBar.style.width = `${(step / totalSteps) * 100}%`;
+        
+        prevBtn.style.display = step === 1 ? 'none' : 'block';
+        nextBtn.style.display = step === totalSteps ? 'none' : 'block';
+        submitBtn.style.display = step === totalSteps ? 'block' : 'none';
+    }
+    
+    nextBtn.addEventListener('click', () => {
+        if (validateStep(currentStep)) {
+            currentStep++;
+            updateStep(currentStep);
+        }
+    });
+    
+    prevBtn.addEventListener('click', () => {
+        currentStep--;
+        updateStep(currentStep);
+    });
+    
+    function validateStep(step) {
+        const currentStepElement = document.getElementById(`step${step}`);
+        const requiredFields = currentStepElement.querySelectorAll('[required]');
+        
+        let valid = true;
+        requiredFields.forEach(field => {
+            if (!field.value) {
+                field.classList.add('is-invalid');
+                valid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        return valid;
+    }
+    
+    form.addEventListener('submit', (e) => {
+        if (!validateStep(currentStep)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

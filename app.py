@@ -2,13 +2,41 @@ import os
 import logging
 import random
 from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify, send_file
-from models import db, Trainer, Client, Plan, ProgressLog, ExerciseProgression, MealIngredient, SubstitutionRule, DietaryPreference, MealPlan, ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement, FitnessResource, GoalProgress, Challenge, ChallengeParticipant, LeaderboardEntry
 from datetime import datetime, timedelta
-from utils import progression_tracker
-from utils import workout_recommender
+from extensions import db
+from models import (
+    Trainer, Client, Plan, ProgressLog, ExerciseProgression,
+    MealIngredient, SubstitutionRule, DietaryPreference, MealPlan,
+    ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement,
+    FitnessResource, GoalProgress, Challenge, ChallengeParticipant,
+    LeaderboardEntry
+)
+from utils import progression_tracker, workout_recommender
 from utils.ai_meal_planner import generate_ai_meal_plan
+from utils.form_validator import (
+    validate_client_registration,
+    validate_meal_plan_request,
+    validate_workout_log,
+    validate_challenge_creation
+)
 
-# Add this function after the existing imports
+# Create the app
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET")
+
+# Configure the database 
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
+
+# Initialize the app with the extension
+db.init_app(app)
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
 def create_sample_resources():
     """Create initial sample resources if none exist"""
     try:
@@ -220,37 +248,158 @@ def create_sample_client():
         logging.error(f"Error creating sample client: {str(e)}")
         db.session.rollback()
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
 
-#class Base(DeclarativeBase):
-#    pass
+# Add after the existing sample data functions
 
-#db = SQLAlchemy(model_class=Base)
-# create the app
-app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET")
+def create_sample_data():
+    """Create comprehensive sample data for testing and demonstration"""
+    try:
+        # Only create sample data if no existing data
+        if Trainer.query.first() or Client.query.first():
+            return
 
-# configure the database, relative to the app instance folder
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-}
-# initialize the app with the extension, flask-sqlalchemy >= 3.0.x
-db.init_app(app)
+        logging.info("Creating sample data for new deployment")
+
+        # Create sample trainer
+        trainer = Trainer(
+            username="coach_mike",
+            email="mike@fitcoach.com",
+            business_name="Elite Fitness Training",
+            password_hash="dummy_hash"  # In production, use proper password hashing
+        )
+        db.session.add(trainer)
+        db.session.flush()
+
+        # Create diverse client profiles
+        client_profiles = [
+            {
+                'name': 'Sarah Johnson',
+                'fitness_level': 'beginner',
+                'goal': 'weight_loss',
+                'diet_preference': 'balanced',
+                'allergies': ['nuts']
+            },
+            {
+                'name': 'James Smith',
+                'fitness_level': 'intermediate',
+                'goal': 'muscle_gain',
+                'diet_preference': 'high_protein',
+                'allergies': []
+            },
+            {
+                'name': 'Emily Chen',
+                'fitness_level': 'advanced',
+                'goal': 'endurance',
+                'diet_preference': 'vegan',
+                'allergies': ['dairy']
+            }
+        ]
+
+        for profile in client_profiles:
+            client = Client(
+                name=profile['name'],
+                trainer_id=trainer.id,
+                fitness_level=profile['fitness_level'],
+                goal=profile['goal'],
+                diet_preference=profile['diet_preference'],
+                allergies=profile['allergies']
+            )
+            db.session.add(client)
+            db.session.flush()
+
+            # Create dietary preferences
+            diet_pref = DietaryPreference(
+                client_id=client.id,
+                diet_type=profile['diet_preference'],
+                meal_count_per_day=3,
+                excluded_ingredients=profile['allergies'],
+                preferred_ingredients=[],
+                meal_size_preference='medium',
+                calorie_target=2000
+            )
+            db.session.add(diet_pref)
+
+            # Create initial goal
+            goal = Goal(
+                client_id=client.id,
+                goal_type=profile['goal'],
+                target_value=profile['goal'] == 'weight_loss' and 65.0 or 75.0,
+                current_value=profile['goal'] == 'weight_loss' and 70.0 or 70.0,
+                start_date=datetime.now().date(),
+                target_date=(datetime.now() + timedelta(days=90)).date(),
+                description=f"Initial {profile['goal'].replace('_', ' ')} goal"
+            )
+            db.session.add(goal)
+
+            # Add progress logs
+            for i in range(5):
+                log = ProgressLog(
+                    client_id=client.id,
+                    log_date=datetime.now() - timedelta(days=i),
+                    workout_completed=True,
+                    exercise_data=[
+                        {
+                            'name': 'Push-ups',
+                            'sets': 3,
+                            'reps': 10,
+                            'type': 'strength'
+                        },
+                        {
+                            'name': 'Squats',
+                            'sets': 3,
+                            'reps': 15,
+                            'type': 'strength'
+                        }
+                    ],
+                    metrics={
+                        'weight': profile['goal'] == 'weight_loss' and 70.0 - (i * 0.2) or 70.0 + (i * 0.2),
+                        'energy_level': random.randint(7, 9),
+                        'mood': random.choice(['great', 'good', 'tired'])
+                    }
+                )
+                db.session.add(log)
+
+            # Create activity feed entries
+            activity = ActivityFeed(
+                client_id=client.id,
+                activity_type='goal_created',
+                description=f"Started new {profile['goal'].replace('_', ' ')} journey",
+                icon='target',
+                priority='high',
+                is_milestone=True
+            )
+            db.session.add(activity)
+
+        # Create sample challenge
+        challenge = Challenge(
+            name="30-Day Fitness Challenge",
+            description="Complete 30 workouts in 30 days",
+            challenge_type="workout",
+            target_value=30,
+            start_date=datetime.now(),
+            end_date=datetime.now() + timedelta(days=30),
+            created_by=1,
+            reward_points=300,
+            rules={
+                'minimum_duration': 30,
+                'rest_days_allowed': 5
+            }
+        )
+        db.session.add(challenge)
+
+        db.session.commit()
+        logging.info("Successfully created sample data")
+
+    except Exception as e:
+        logging.error(f"Error creating sample data: {str(e)}")
+        db.session.rollback()
 
 with app.app_context():
-    # Make sure to import the models here or their tables won't be created
-    from models import (
-        Trainer, Client, Plan, ProgressLog, ExerciseProgression,
-        MealIngredient, SubstitutionRule, DietaryPreference, MealPlan,
-        ActivityFeed, Goal, GoalMilestone, Achievement, ClientAchievement, FitnessResource, GoalProgress, Challenge, ChallengeParticipant, LeaderboardEntry # Added Achievement and ClientAchievement and FitnessResource and GoalProgress
-    )
     db.create_all()
     create_sample_resources()
     create_sample_achievements()
     create_sample_client()
+    create_sample_data()
 
     # Create sample client achievements for existing clients
     clients = Client.query.all()
@@ -298,14 +447,23 @@ def clients_list():
 def create_plan():
     if request.method == 'POST':
         try:
+            # Get form data
             client_data = {
-                'name': request.form['client_name'],
+                'diet_type': request.form['diet_preference'],
+                'meal_count_per_day': int(request.form.get('meals_per_day', 3)),
+                'calorie_target': int(request.form.get('calorie_target', 2000)),
                 'goal': request.form['goal'],
                 'fitness_level': request.form['fitness_level'],
-                'diet_preference': request.form['diet_preference'],
                 'weekly_budget': float(request.form['weekly_budget']),
                 'training_days': int(request.form['training_days'])
             }
+
+            # Validate meal plan request
+            is_valid, errors = validate_meal_plan_request(client_data)
+            if not is_valid:
+                for error in errors:
+                    flash(error, 'danger')
+                return render_template('create_plan.html')
 
             # Get client's performance data if available
             client_performance = None
@@ -322,31 +480,40 @@ def create_plan():
                             client_performance.extend(log.exercise_data)
 
             # Generate workout and meal plans
-            workout_plan = workout_generator.create_workout_plan(
-                client_data['fitness_level'],
-                client_data['training_days'],
-                client_data['goal'],
-                client_performance  # Pass performance data to the workout generator
-            )
+            try:
+                workout_plan = workout_recommender.generate_workout_recommendations(
+                    {
+                        'fitness_level': client_data['fitness_level'],
+                        'goal': client_data['goal'],
+                        'training_days': client_data['training_days']
+                    },
+                    client_performance or [],
+                    []  # goals data, can be added later
+                )
+            except Exception as e:
+                logging.error(f"Error generating workout plan: {str(e)}")
+                flash('Error generating workout plan. Please try again.', 'danger')
+                return render_template('create_plan.html')
 
             # Create dietary preferences for AI meal planner
             diet_pref = DietaryPreference(
-                diet_type=client_data['diet_preference'],
-                meal_count_per_day=3,  # Default value
+                diet_type=client_data['diet_type'],
+                meal_count_per_day=client_data['meal_count_per_day'],
                 excluded_ingredients=[],  # Can be updated later
                 preferred_ingredients=[],  # Can be updated later
                 meal_size_preference='medium',  # Default value
-                calorie_target=2000  # Default value, should be calculated based on goals
+                calorie_target=client_data['calorie_target']
             )
 
-            # Generate AI meal plan
+            # Generate AI meal plan with error handling
             try:
                 meal_plan = generate_ai_meal_plan(diet_pref)
+                logging.info("Successfully generated AI meal plan")
             except Exception as e:
                 logging.error(f"Error with AI meal plan, falling back to basic plan: {str(e)}")
                 # Fallback to basic meal generator
                 meal_plan = meal_generator.create_meal_plan(
-                    client_data['diet_preference'],
+                    client_data['diet_type'],
                     client_data['weekly_budget']
                 )
 
@@ -392,6 +559,7 @@ def preview_plan():
         logging.error(f"Error previewing plan: {str(e)}")
         flash('Error loading plan preview. Please try again.', 'danger')
         return redirect(url_for('fitness_quiz'))
+
 
 
 @app.route('/generate_pdf')
@@ -561,6 +729,89 @@ def log_progress():
     except Exception as e:
         logging.error(f"Error logging progress: {str(e)}")
         return jsonify({'error': 'Failed to log progress'}), 500
+
+# Add new route for onboarding
+@app.route('/onboarding', methods=['GET', 'POST'])
+def onboarding():
+    """Handle user onboarding process"""
+    if request.method == 'POST':
+        try:
+            # Validate form data
+            form_data = {
+                'name': request.form['name'],
+                'email': request.form['email'],
+                'fitness_level': request.form['fitness_level'],
+                'goal': request.form['goal'],
+                'training_days': request.form['training_days'],
+                'diet_type': request.form['diet_type']
+            }
+            
+            is_valid, errors = validate_client_registration(form_data)
+            if not is_valid:
+                for error in errors:
+                    flash(error, 'danger')
+                return render_template('onboarding.html', current_step=1, progress=25)
+
+            # Create client profile
+            client = Client(
+                name=form_data['name'],
+                email=form_data['email'],
+                fitness_level=form_data['fitness_level'],
+                goal=form_data['goal'],
+                diet_preference=form_data['diet_type'],
+                allergies=request.form.get('allergies', '').split(',') if request.form.get('allergies') else []
+            )
+            db.session.add(client)
+            db.session.flush()  # Get client.id
+
+            # Create dietary preferences
+            diet_pref = DietaryPreference(
+                client_id=client.id,
+                diet_type=form_data['diet_type'],
+                meal_count_per_day=3,  # Default value
+                excluded_ingredients=client.allergies,
+                meal_size_preference='medium',  # Default value
+                calorie_target=2000  # Default value, can be updated later
+            )
+            db.session.add(diet_pref)
+
+            # Create initial goal
+            goal = Goal(
+                client_id=client.id,
+                goal_type=form_data['goal'],
+                target_value=0,  # Will be set based on specific metrics later
+                start_date=datetime.now().date(),
+                target_date=(datetime.now() + timedelta(days=90)).date(),
+                description=f"Initial {form_data['goal'].replace('_', ' ')} goal"
+            )
+            db.session.add(goal)
+
+            # Log first activity 
+            activity = ActivityFeed(
+                client_id=client.id,
+                activity_type='onboarding_completed',
+                description="Started fitness journey!",
+                icon='star',
+                priority='high',
+                is_milestone=True
+            )
+            db.session.add(activity)
+
+            # Store client ID in session
+            session['client_id'] = client.id
+
+            db.session.commit()
+            flash('Welcome to your fitness journey!', 'success')
+            return redirect(url_for('dashboard'))
+
+        except Exception as e:
+            logging.error(f"Error during onboarding: {str(e)}")
+            db.session.rollback()
+            flash('Error creating your profile. Please try again.', 'danger')
+            return render_template('onboarding.html', current_step=1, progress=25)
+
+    # GET request - show onboarding form
+    return render_template('onboarding.html', current_step=1, progress=25)
 
 @app.route('/dashboard')
 def dashboard():
@@ -1607,17 +1858,23 @@ def create_challenge():
     try:
         data = request.get_json()
 
-        # Create new challenge
+        # Validate challenge data
+        is_valid, errors = validate_challenge_creation(data)
+        if not is_valid:
+            return jsonify({'error': errors}), 400
+
+        # Create challenge
         challenge = Challenge(
             name=data['name'],
             description=data['description'],
             challenge_type=data['challenge_type'],
             target_value=float(data['target_value']),
-            start_date=datetime.utcnow(),
+            start_date=datetime.strptime(data['start_date'], '%Y-%m-%d'),
             end_date=datetime.strptime(data['end_date'], '%Y-%m-%d'),
-            created_by=session['client_id']
+            created_by=session['client_id'],
+            reward_points=data.get('reward_points', 100),
+            rules=data.get('rules', {})
         )
-
         db.session.add(challenge)
 
         # Add creator as first participant
@@ -1631,60 +1888,60 @@ def create_challenge():
         log_activity(
             client_id=session['client_id'],
             activity_type='challenge_created',
-            description=f'Created new challenge: {challenge.name}',
-            icon='flag',
-            is_milestone=True
+            description=f"Created new challenge: {data['name']}",
+            icon='award'
         )
 
         db.session.commit()
-
-        return jsonify({'success': True})
+        return jsonify({
+            'success': True,
+            'challenge_id': challenge.id,
+            'message': 'Challenge created successfully'
+        })
 
     except Exception as e:
         logging.error(f"Error creating challenge: {str(e)}")
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/challenge/<int:challenge_id>/join', methods=['POST'])
 def join_challenge(challenge_id):
-    """Join an existing challenge"""
-    if 'client_id' not in session:
-        return jsonify({'success': False, 'error': 'Please log in first'}), 401
-
+    """Join a fitness challenge"""
     try:
+        if 'client_id' not in session:
+            return jsonify({'error': 'Please log in first'}), 401
+
+        client = Client.query.get_or_404(session['client_id'])
         challenge = Challenge.query.get_or_404(challenge_id)
 
         # Check if already joined
-        existing = ChallengeParticipant.query.filter_by(
+        existing_participation = ChallengeParticipant.query.filter_by(
             challenge_id=challenge_id,
-            client_id=session['client_id']
+            client_id=client.id
         ).first()
 
-        if existing:
-            return jsonify({'success': False, 'error': 'Already joined this challenge'}), 400
+        if existing_participation:
+            return jsonify({'error': 'Already joined this challenge'}), 400
 
-        # Join challenge
+        # Create new participant entry
         participant = ChallengeParticipant(
             challenge_id=challenge_id,
-            client_id=session['client_id']
+            client_id=client.id
         )
         db.session.add(participant)
 
         # Log activity
         log_activity(
-            client_id=session['client_id'],
+            client_id=client.id,
             activity_type='challenge_joined',
-            description=f'Joined challenge: {challenge.name}',
-            icon='users'
+            description=f"Joined challenge: {challenge.name}",
+            icon='award'
         )
 
         db.session.commit()
-
-        return jsonify({'success': True})
+        return jsonify({'success': True, 'message': 'Successfully joined challenge'})
 
     except Exception as e:
         logging.error(f"Error joining challenge: {str(e)}")
-        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/challenge/<int:challenge_id>/leaderboard')
@@ -1824,5 +2081,230 @@ def generate_meal_plan():
         logging.error(f"Error in generate_meal_plan route: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
 
+@app.route('/log-workout', methods=['POST'])
+def log_workout():
+    """Log a completed workout with validation"""
+    try:
+        data = request.get_json()
+
+        # Validate workout log
+        is_valid, errors = validate_workout_log(data)
+        if not is_valid:
+            return jsonify({'error': errors}), 400
+
+        # Create progress log
+        progress_log = ProgressLog(
+            client_id=session['client_id'],
+            workout_completed=True,
+            exercise_data=data['exercise_data'],
+            notes=data.get('notes', ''),
+            metrics=data.get('metrics', {})
+        )
+        db.session.add(progress_log)
+
+        # Update client's progress and points
+        client = Client.query.get(session['client_id'])
+        client.points += 10  # Award points for logging workout
+
+        # Log activity
+        log_activity(
+            client_id=session['client_id'],
+            activity_type='workout_completed',
+            description='Completed a workout session',
+            icon='activity'
+        )
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Workout logged successfully'})
+
+    except Exception as e:
+        logging.error(f"Error logging workout: {str(e)}")
+        return jsonify({'error': 'Failed to log workout'}), 500
+
+
+
+@app.route('/client/<int:client_id>/adjust-workout', methods=['POST'])
+def adjust_workout(client_id):
+    """Adjust workout difficulty based on client's performance data"""
+    try:
+        client = Client.query.get_or_404(client_id)
+
+        # Get recent progress logs
+        progress_logs = ProgressLog.query.filter_by(client_id=client_id)\
+            .order_by(ProgressLog.log_date.desc())\
+            .limit(10)\
+            .all()
+
+        # Extract exercise data from logs
+        exercise_data = []
+        for log in progress_logs:
+            if log.exercise_data:
+                for exercise in log.exercise_data:
+                    # Add completion status based on metrics
+                    exercise['completed'] = log.workout_completed
+                    # Add form rating based on intensity metric
+                    exercise['form_rating'] = log.metrics.get('intensity', 7) if log.metrics else 7
+                    exercise_data.append(exercise)
+
+        # Default workout if no logs exist
+        base_exercises = [
+            {
+                'name': 'Push-ups',
+                'sets': 3,
+                'reps': 10,
+                'type': 'strength'
+            },
+            {
+                'name': 'Bodyweight Squats',
+                'sets': 3,
+                'reps': 12,
+                'type': 'strength'
+            },
+            {
+                'name': 'Plank',
+                'sets': 3,
+                'reps': '30 seconds',
+                'type': 'core'
+            }
+        ]
+
+        # Generate new workout plan with difficulty adjustment
+        if exercise_data:
+            adjusted_exercises = []
+            for exercise in exercise_data:
+                # Group exercise data by name
+                exercise_history = [e for e in exercise_data if e['name'] == exercise['name']]
+                if exercise_history:
+                    adjusted = workout_generator.adjust_exercise_difficulty(
+                        exercise.copy(),
+                        exercise_history,
+                        client.fitness_level
+                    )
+                    if adjusted not in adjusted_exercises:  # Avoid duplicates
+                        adjusted_exercises.append(adjusted)
+        else:
+            # If no exercise data, create a beginner-friendly plan
+            adjusted_exercises = base_exercises
+
+        # Create the response workout plan
+        workout_plan = {
+            'exercises': adjusted_exercises,
+            'last_adjusted': datetime.utcnow().isoformat()
+        }
+
+        # Log the adjustment
+        log_activity(
+            client_id=client_id,
+            activity_type='workout_adjusted',
+            description='Workout difficulty automatically adjusted based on performance',
+            icon='sliders',
+            priority='normal',
+            extra_data={'adjusted_plan': workout_plan}
+        )
+
+        return jsonify({
+            'success': True,
+            'workout_plan': workout_plan
+        })
+
+    except Exception as e:
+        logging.error(f"Error adjusting workout: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to adjust workout plan'
+        }), 500
+
+# Add these routes after your existing routes
+
+@app.route('/challenges')
+def challenges():
+    """Display social challenges and leaderboard"""
+    try:
+        # Get active challenges
+        active_challenges = Challenge.query\
+            .filter(Challenge.end_date > datetime.utcnow())\
+            .filter_by(status='active')\
+            .order_by(Challenge.created_at.desc())\
+            .all()
+
+        # Get user's joined challenges
+        user_challenges = []
+        if 'client_id' in session:
+            client = Client.query.get(session['client_id'])
+            if client:
+                user_challenges = client.participated_challenges.all()
+
+        # Get global leaderboard
+        leaderboard = LeaderboardEntry.query\
+            .filter_by(category='global')\
+            .order_by(LeaderboardEntry.rank)\
+            .limit(10)\
+            .all()
+
+        return render_template('challenges.html',
+                            active_challenges=active_challenges,
+                            user_challenges=user_challenges,
+                            leaderboard=leaderboard,
+                            current_user={'id': session.get('client_id')})
+
+    except Exception as e:
+        logging.error(f"Error loading challenges page: {str(e)}")
+        flash('Error loading challenges. Please try again.', 'danger')
+        return redirect(url_for('index'))
+
+@app.route('/challenge/create', methods=['POST'])
+def create_challenge():
+    """Create a new social challenge"""
+    if 'client_id' not in session:
+        return jsonify({'success': False, 'error': 'Please log in first'}), 401
+
+    try:
+        data = request.get_json()
+
+        # Validate challenge data
+        is_valid, errors = validate_challenge_creation(data)
+        if not is_valid:
+            return jsonify({'error': errors}), 400
+
+        # Create challenge
+        challenge = Challenge(
+            name=data['name'],
+            description=data['description'],
+            challenge_type=data['challenge_type'],
+            target_value=float(data['target_value']),
+            start_date=datetime.strptime(data['start_date'], '%Y-%m-%d'),
+            end_date=datetime.strptime(data['end_date'], '%Y-%m-%d'),
+            created_by=session['client_id'],
+            reward_points=data.get('reward_points', 100),
+            rules=data.get('rules', {})
+        )
+        db.session.add(challenge)
+
+        # Add creator as first participant
+        participant = ChallengeParticipant(
+            challenge_id=challenge.id,
+            client_id=session['client_id']
+        )
+        db.session.add(participant)
+
+        # Log activity
+        log_activity(
+            client_id=session['client_id'],
+            activity_type='challenge_created',
+            description=f"Created new challenge: {data['name']}",
+            icon='award'
+        )
+
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'challenge_id': challenge.id,
+            'message': 'Challenge created successfully'
+        })
+
+    except Exception as e:
+        logging.error(f"Error creating challenge: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

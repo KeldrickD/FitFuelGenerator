@@ -1,13 +1,11 @@
 from datetime import datetime, timedelta
 from sqlalchemy import or_, func, desc
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 import logging
-
-# Create db instance
-db = SQLAlchemy()
+from extensions import db
 
 class Trainer(db.Model):
+    __tablename__ = 'trainer'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -17,6 +15,7 @@ class Trainer(db.Model):
     plans = db.relationship('Plan', backref='trainer', lazy=True)
 
 class Client(db.Model):
+    __tablename__ = 'client'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     trainer_id = db.Column(db.Integer, db.ForeignKey('trainer.id'), nullable=False)
@@ -54,6 +53,7 @@ class Client(db.Model):
         return entry.rank if entry else None
 
 class ActivityFeed(db.Model):
+    __tablename__ = 'activity_feed'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
     activity_type = db.Column(db.String(50), nullable=False)  # workout, meal, goal, etc.
@@ -65,6 +65,7 @@ class ActivityFeed(db.Model):
     is_milestone = db.Column(db.Boolean, default=False)  # Mark important achievements
 
 class Plan(db.Model):
+    __tablename__ = 'plan'
     id = db.Column(db.Integer, primary_key=True)
     trainer_id = db.Column(db.Integer, db.ForeignKey('trainer.id'), nullable=False)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
@@ -75,6 +76,7 @@ class Plan(db.Model):
     training_days = db.Column(db.Integer)
 
 class ProgressLog(db.Model):
+    __tablename__ = 'progress_log'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
     log_date = db.Column(db.DateTime, default=datetime.utcnow)
@@ -85,6 +87,7 @@ class ProgressLog(db.Model):
     ai_insights = db.Column(db.JSON)  # Stores AI-generated insights
 
 class ExerciseProgression(db.Model):
+    __tablename__ = 'exercise_progression'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
     exercise_name = db.Column(db.String(100), nullable=False)
@@ -94,6 +97,7 @@ class ExerciseProgression(db.Model):
     next_milestone = db.Column(db.JSON)  # Next progression target
 
 class MealIngredient(db.Model):
+    __tablename__ = 'meal_ingredient'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     category = db.Column(db.String(50), nullable=False)  # e.g., protein, carb, vegetable
@@ -107,6 +111,7 @@ class MealIngredient(db.Model):
     )
 
 class SubstitutionRule(db.Model):
+    __tablename__ = 'substitution_rule'
     id = db.Column(db.Integer, primary_key=True)
     ingredient_id = db.Column(db.Integer, db.ForeignKey('meal_ingredient.id'), nullable=False)
     substitute_id = db.Column(db.Integer, db.ForeignKey('meal_ingredient.id'), nullable=False)
@@ -117,6 +122,7 @@ class SubstitutionRule(db.Model):
     suitability_score = db.Column(db.Float)  # AI-calculated score for substitution
 
 class DietaryPreference(db.Model):
+    __tablename__ = 'dietary_preference'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -130,6 +136,7 @@ class DietaryPreference(db.Model):
     meal_timing = db.Column(db.JSON)  # Store preferred meal times
 
 class MealPlan(db.Model):
+    __tablename__ = 'meal_plan'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -141,6 +148,7 @@ class MealPlan(db.Model):
     status = db.Column(db.String(20), default='active')
 
 class Goal(db.Model):
+    __tablename__ = 'goal'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
     goal_type = db.Column(db.String(50), nullable=False)  # weight_loss, strength, endurance, etc.
@@ -155,6 +163,7 @@ class Goal(db.Model):
     progress_updates = db.relationship('GoalProgress', backref='goal', lazy=True)
 
 class GoalMilestone(db.Model):
+    __tablename__ = 'goal_milestone'
     id = db.Column(db.Integer, primary_key=True)
     goal_id = db.Column(db.Integer, db.ForeignKey('goal.id'), nullable=False)
     milestone_value = db.Column(db.Float, nullable=False)
@@ -164,6 +173,7 @@ class GoalMilestone(db.Model):
     achieved_date = db.Column(db.Date)
 
 class GoalProgress(db.Model):
+    __tablename__ = 'goal_progress'
     id = db.Column(db.Integer, primary_key=True)
     goal_id = db.Column(db.Integer, db.ForeignKey('goal.id'), nullable=False)
     recorded_value = db.Column(db.Float, nullable=False)
@@ -172,6 +182,7 @@ class GoalProgress(db.Model):
     metrics = db.Column(db.JSON)  # Additional progress metrics
 
 class Achievement(db.Model):
+    __tablename__ = 'achievement'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
@@ -332,6 +343,7 @@ class Achievement(db.Model):
             return "Recommended based on your profile"
 
 class ClientAchievement(db.Model):
+    __tablename__ = 'client_achievement'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
     achievement_id = db.Column(db.Integer, db.ForeignKey('achievement.id'), nullable=False)
@@ -344,6 +356,7 @@ class ClientAchievement(db.Model):
     achievement = db.relationship('Achievement')
 
 class FitnessResource(db.Model):
+    __tablename__ = 'fitness_resource'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
@@ -381,6 +394,7 @@ class FitnessResource(db.Model):
         return base_query.order_by(cls.created_at.desc()).all()
 
 class Challenge(db.Model):
+    __tablename__ = 'challenge'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
@@ -407,6 +421,7 @@ class Challenge(db.Model):
             .all()
 
 class ChallengeParticipant(db.Model):
+    __tablename__ = 'challenge_participant'
     id = db.Column(db.Integer, primary_key=True)
     challenge_id = db.Column(db.Integer, db.ForeignKey('challenge.id'), nullable=False)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
@@ -435,6 +450,7 @@ class ChallengeParticipant(db.Model):
 
 
 class LeaderboardEntry(db.Model):
+    __tablename__ = 'leaderboard_entry'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
     category = db.Column(db.String(50), nullable=False)  # global, monthly, challenge

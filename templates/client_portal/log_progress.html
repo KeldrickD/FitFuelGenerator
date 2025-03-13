@@ -1,0 +1,143 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <!-- Mobile Navigation -->
+    <nav class="bg-indigo-600 dark:bg-indigo-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{{ url_for('client_portal.dashboard') }}" class="text-white">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                    <h1 class="ml-4 text-white font-bold">Log Progress</h1>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <form action="{{ url_for('client_portal.log_progress') }}" method="POST" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <!-- Date Selection -->
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <label for="log_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
+                    <input type="date" name="log_date" id="log_date" required
+                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white"
+                        value="{{ today_date }}">
+                </div>
+
+                <!-- Workout Completion -->
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <label for="workout_completed" class="text-sm font-medium text-gray-700 dark:text-gray-300">Did you complete today's workout?</label>
+                        <div class="relative inline-block w-12 align-middle select-none">
+                            <input type="checkbox" name="workout_completed" id="workout_completed" value="true"
+                                class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white dark:bg-gray-600 border-4 appearance-none cursor-pointer"/>
+                            <label for="workout_completed"
+                                class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 dark:bg-gray-700 cursor-pointer"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metrics -->
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Metrics</h3>
+                    
+                    <div>
+                        <label for="weight" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Weight (kg)</label>
+                        <input type="number" step="0.1" name="weight" id="weight"
+                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white"
+                            placeholder="Enter your weight">
+                    </div>
+
+                    <div>
+                        <label for="body_fat" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Body Fat %</label>
+                        <input type="number" step="0.1" name="body_fat" id="body_fat"
+                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white"
+                            placeholder="Enter your body fat percentage">
+                    </div>
+
+                    <div>
+                        <label for="energy_level" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Energy Level</label>
+                        <select name="energy_level" id="energy_level"
+                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white">
+                            <option value="">Select energy level</option>
+                            <option value="1">1 - Very Low</option>
+                            <option value="2">2 - Low</option>
+                            <option value="3">3 - Moderate</option>
+                            <option value="4">4 - High</option>
+                            <option value="5">5 - Very High</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="sleep_quality" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sleep Quality</label>
+                        <select name="sleep_quality" id="sleep_quality"
+                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white">
+                            <option value="">Select sleep quality</option>
+                            <option value="1">1 - Very Poor</option>
+                            <option value="2">2 - Poor</option>
+                            <option value="3">3 - Fair</option>
+                            <option value="4">4 - Good</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="mood" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mood</label>
+                        <select name="mood" id="mood"
+                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white">
+                            <option value="">Select mood</option>
+                            <option value="1">1 - Very Bad</option>
+                            <option value="2">2 - Bad</option>
+                            <option value="3">3 - Neutral</option>
+                            <option value="4">4 - Good</option>
+                            <option value="5">5 - Very Good</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                    <textarea name="notes" id="notes" rows="4"
+                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white"
+                        placeholder="Add any notes about your progress..."></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end">
+                    <button type="submit"
+                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900">
+                        Save Progress
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<style>
+.toggle-checkbox:checked {
+    right: 0;
+    border-color: #4f46e5;
+}
+.toggle-checkbox:checked + .toggle-label {
+    background-color: #4f46e5;
+}
+.toggle-checkbox {
+    right: 0;
+    transition: all 0.3s;
+}
+.toggle-label {
+    transition: all 0.3s;
+}
+</style>
+
+{% endblock %} 

@@ -1,0 +1,573 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Mobile Header -->
+    <div class="lg:hidden mb-6">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome, {{ current_user.name }}</h1>
+            <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-600 focus:outline-none">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden mt-4 rounded-lg bg-white dark:bg-gray-800 shadow-lg">
+            <nav class="px-4 py-2 space-y-2">
+                <a href="#workouts" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Workouts</a>
+                <a href="#progress" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Progress</a>
+                <a href="#goals" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Goals</a>
+                <a href="#meal-plan" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Meal Plan</a>
+                <a href="#workout-nutrition" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Workout & Nutrition</a>
+                <a href="#challenges" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Challenges</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <a href="/workout-nutrition" class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
+            <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-500 dark:text-purple-300 mb-3 mx-auto">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Nutrition & Workouts</p>
+        </a>
+        <a href="/workouts" class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
+            <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-500 dark:text-blue-300 mb-3 mx-auto">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Workouts</p>
+        </a>
+        <a href="/meal-plan" class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
+            <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-300 mb-3 mx-auto">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Meal Plan</p>
+        </a>
+        <a href="/challenges" class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
+            <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-500 dark:text-yellow-300 mb-3 mx-auto">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Challenges</p>
+        </a>
+        <a href="/progress" class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
+            <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-500 dark:text-indigo-300 mb-3 mx-auto">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Track Progress</p>
+        </a>
+        <a href="/weekly-meal-plan" class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 text-center">
+            <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900 text-red-500 dark:text-red-300 mb-3 mx-auto">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Weekly Planner</p>
+        </a>
+    </div>
+
+    <!-- Today's Snapshot -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Today's Schedule</h2>
+        </div>
+        <div class="p-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Workout</p>
+                    {% if today_workout %}
+                        <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ today_workout.name }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ today_workout.duration }} minutes</p>
+                    {% else %}
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No workout scheduled</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Nutrition</p>
+                    {% if today_meals %}
+                        <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ today_meals|length }} meals planned</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ total_calories }} calories</p>
+                    {% else %}
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No meals planned</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workout & Nutrition Integration Section -->
+    <div id="workout-nutrition" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Workout & Nutrition Insights</h2>
+            <button onclick="window.location.href='/workout-nutrition'" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+                View Details
+            </button>
+        </div>
+        <div class="p-4">
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-md font-medium text-gray-900 dark:text-white">Calorie Recommendations</h3>
+                    <span class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 py-1 px-2 rounded-full text-xs font-medium">Updated</span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                    {% if workout_nutrition_data and workout_nutrition_data.calories %}
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            Based on your recent {{ workout_nutrition_data.workout_type }} workouts, we recommend 
+                            <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ workout_nutrition_data.calories.daily_target }} calories</span> 
+                            daily with <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ workout_nutrition_data.calories.post_workout }}</span> 
+                            after workouts for optimal recovery.
+                        </p>
+                    {% else %}
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            Log a few workouts and meals to receive personalized calorie recommendations based on your activity level.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h3 class="text-md font-medium text-gray-900 dark:text-white mb-2">Recovery Status</h3>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Muscle Recovery</p>
+                        {% if workout_nutrition_data and workout_nutrition_data.recovery %}
+                            <p class="mt-1 text-lg font-medium 
+                                {% if workout_nutrition_data.recovery.muscle_recovery >= 80 %}text-green-600 dark:text-green-400
+                                {% elif workout_nutrition_data.recovery.muscle_recovery >= 50 %}text-yellow-600 dark:text-yellow-400
+                                {% else %}text-red-600 dark:text-red-400{% endif %}">
+                                {{ workout_nutrition_data.recovery.muscle_recovery }}%
+                            </p>
+                        {% else %}
+                            <p class="mt-1 text-lg font-medium text-gray-400 dark:text-gray-500">--</p>
+                        {% endif %}
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Energy Level</p>
+                        {% if workout_nutrition_data and workout_nutrition_data.recovery %}
+                            <p class="mt-1 text-lg font-medium 
+                                {% if workout_nutrition_data.recovery.energy_level >= 80 %}text-green-600 dark:text-green-400
+                                {% elif workout_nutrition_data.recovery.energy_level >= 50 %}text-yellow-600 dark:text-yellow-400
+                                {% else %}text-red-600 dark:text-red-400{% endif %}">
+                                {{ workout_nutrition_data.recovery.energy_level }}%
+                            </p>
+                        {% else %}
+                            <p class="mt-1 text-lg font-medium text-gray-400 dark:text-gray-500">--</p>
+                        {% endif %}
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Protein Intake</p>
+                        {% if workout_nutrition_data and workout_nutrition_data.macros %}
+                            <p class="mt-1 text-lg font-medium 
+                                {% if workout_nutrition_data.macros.protein_goal_percent >= 90 %}text-green-600 dark:text-green-400
+                                {% elif workout_nutrition_data.macros.protein_goal_percent >= 70 %}text-yellow-600 dark:text-yellow-400
+                                {% else %}text-red-600 dark:text-red-400{% endif %}">
+                                {{ workout_nutrition_data.macros.protein_goal_percent }}%
+                            </p>
+                        {% else %}
+                            <p class="mt-1 text-lg font-medium text-gray-400 dark:text-gray-500">--</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-md font-medium text-gray-900 dark:text-white mb-2">Upcoming Recommendation</h3>
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                    {% if workout_nutrition_data and workout_nutrition_data.recommendations %}
+                        <div class="flex items-start">
+                            <svg class="h-5 w-5 text-indigo-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ workout_nutrition_data.recommendations.next_recommendation }}</p>
+                        </div>
+                    {% else %}
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            Continue tracking your workouts and meals to receive personalized recommendations.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Challenges Section -->
+    <div id="challenges" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Active Challenges</h2>
+            <button onclick="window.location.href='/challenges'" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+                View All
+            </button>
+        </div>
+        <div class="p-4">
+            {% if active_challenges %}
+                <div class="space-y-4">
+                    {% for challenge in active_challenges %}
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden">
+                        <div class="p-3">
+                            <div class="flex justify-between">
+                                <div>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium 
+                                        {% if challenge.challenge_type == 'workout' %}bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300
+                                        {% elif challenge.challenge_type == 'nutrition' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                                        {% else %}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300{% endif %}
+                                    ">
+                                        {{ challenge.challenge_type|title }}
+                                    </span>
+                                    <h3 class="text-base font-medium text-gray-900 dark:text-white mt-1">{{ challenge.name }}</h3>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                                        {{ (challenge.end_date - current_date).days }} days left
+                                    </p>
+                                    <p class="text-xs font-medium text-gray-900 dark:text-white mt-1">
+                                        {{ challenge.current_value }}/{{ challenge.target_value }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 mt-2">
+                                <div class="
+                                    {% if challenge.challenge_type == 'workout' %}bg-indigo-600 dark:bg-indigo-500
+                                    {% elif challenge.challenge_type == 'nutrition' %}bg-green-600 dark:bg-green-500
+                                    {% else %}bg-purple-600 dark:bg-purple-500{% endif %} 
+                                    h-2.5 rounded-full" 
+                                    style="width: {{ (challenge.current_value / challenge.target_value * 100)|int if challenge.target_value > 0 else 0 }}%">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-6">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No active challenges</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by joining or creating a challenge.</p>
+                    <div class="mt-6">
+                        <button onclick="window.location.href='/challenges'" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Join a Challenge
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Progress Summary -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Progress Summary</h2>
+        </div>
+        <div class="p-4">
+            <div class="space-y-4">
+                {% for metric in progress_metrics %}
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ metric.name }}</span>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ metric.value }}{{ metric.unit }}</span>
+                    </div>
+                    <div class="overflow-hidden h-2 rounded bg-gray-200 dark:bg-gray-700">
+                        <div class="h-2 rounded bg-indigo-600" style="width: {{ metric.progress }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Summary Share -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6">
+        <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-3">Weekly Progress Summary</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Generate a visual summary of your weekly progress to track your fitness journey and share your achievements.
+        </p>
+        <div class="flex items-center justify-between">
+            <button onclick="generateWeeklySummary()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Generate Weekly Summary
+            </button>
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+                Updated weekly
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Recent Activity</h2>
+        </div>
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for activity in recent_activities %}
+            <div class="p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ activity.icon_path }}"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ activity.description }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ activity.timestamp }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Log Modal -->
+<div id="quick-log-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Quick Log</h3>
+        </div>
+        <form id="quick-log-form" class="p-4 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Workout Type</label>
+                <select name="workout_type" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="strength">Strength Training</option>
+                    <option value="cardio">Cardio</option>
+                    <option value="flexibility">Flexibility</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Duration (minutes)</label>
+                <input type="number" name="duration" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                <textarea name="notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="hideQuickLog()" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Mobile menu toggle
+const mobileMenuButton = document.getElementById('mobile-menu-button');
+const mobileMenu = document.getElementById('mobile-menu');
+
+mobileMenuButton.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+});
+
+// Quick log modal
+function showQuickLog() {
+    document.getElementById('quick-log-modal').classList.remove('hidden');
+}
+
+function hideQuickLog() {
+    document.getElementById('quick-log-modal').classList.add('hidden');
+}
+
+// Form submission with offline support
+document.getElementById('quick-log-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const log = {
+        workout_type: formData.get('workout_type'),
+        duration: parseInt(formData.get('duration')),
+        notes: formData.get('notes'),
+        date: new Date().toISOString()
+    };
+
+    try {
+        if (navigator.onLine) {
+            const response = await fetch('/api/workout-logs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(log)
+            });
+            
+            if (response.ok) {
+                showToast('Workout logged successfully', 'success');
+                hideQuickLog();
+                location.reload();
+            } else {
+                throw new Error('Failed to log workout');
+            }
+        } else {
+            await saveWorkoutLog(log);
+            showToast('Workout saved offline. Will sync when online.', 'info');
+            hideQuickLog();
+        }
+    } catch (error) {
+        console.error('Error logging workout:', error);
+        showToast('Failed to log workout', 'error');
+    }
+});
+
+// Touch gesture handling
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
+const SWIPE_THRESHOLD = 50;
+
+// Initialize Hammer.js
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.querySelector('.container');
+    const hammer = new Hammer(container);
+    
+    // Configure horizontal swipe
+    hammer.get('swipe').set({ direction: Hammer.DIRECTION_HORIZONTAL });
+    
+    // Handle swipe left/right
+    hammer.on('swipeleft swiperight', (ev) => {
+        const sections = ['workouts', 'progress', 'goals', 'meal-plan'];
+        const currentSection = window.location.hash.slice(1) || sections[0];
+        const currentIndex = sections.indexOf(currentSection);
+        
+        let newIndex;
+        if (ev.type === 'swipeleft') {
+            newIndex = (currentIndex + 1) % sections.length;
+        } else {
+            newIndex = (currentIndex - 1 + sections.length) % sections.length;
+        }
+        
+        window.location.hash = sections[newIndex];
+        showSection(sections[newIndex]);
+    });
+});
+
+// Section navigation
+function showSection(sectionId) {
+    const sections = document.querySelectorAll('.section');
+    sections.forEach(section => {
+        if (section.id === sectionId) {
+            section.classList.remove('hidden');
+            // Animate section entry
+            section.classList.add('animate-fade-in');
+        } else {
+            section.classList.add('hidden');
+        }
+    });
+    
+    // Update mobile menu active state
+    const menuItems = document.querySelectorAll('#mobile-menu a');
+    menuItems.forEach(item => {
+        if (item.getAttribute('href') === `#${sectionId}`) {
+            item.classList.add('bg-gray-50', 'dark:bg-gray-700');
+        } else {
+            item.classList.remove('bg-gray-50', 'dark:bg-gray-700');
+        }
+    });
+}
+
+// Add loading indicator
+function showLoading() {
+    const loader = document.createElement('div');
+    loader.id = 'loading-indicator';
+    loader.className = 'fixed top-0 left-0 w-full h-1 bg-indigo-600 animate-loading';
+    document.body.appendChild(loader);
+}
+
+function hideLoading() {
+    const loader = document.getElementById('loading-indicator');
+    if (loader) {
+        loader.remove();
+    }
+}
+
+// Handle offline/online status
+window.addEventListener('online', () => {
+    showToast('Back online! Syncing data...', 'info');
+    syncOfflineLogs();
+});
+
+window.addEventListener('offline', () => {
+    showToast('You are offline. Changes will be saved locally.', 'warning');
+});
+
+// Toast notifications
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white ${
+        type === 'success' ? 'bg-green-600' :
+        type === 'error' ? 'bg-red-600' :
+        type === 'warning' ? 'bg-yellow-600' :
+        'bg-indigo-600'
+    } transform transition-transform duration-300 translate-y-0`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('translate-y-full');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function generateWeeklySummary() {
+    // Generate and open the weekly summary image
+    window.open('/api/weekly-summary/share-image', '_blank');
+    
+    // Track the share
+    fetch('/api/track-share', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            content_type: 'weekly_summary',
+            platform: 'image'
+        })
+    })
+    .catch(error => {
+        console.error('Error tracking share:', error);
+    });
+}
+</script>
+
+<style>
+@keyframes loading {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.animate-loading {
+    animation: loading 1.5s infinite;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+</style>
+{% endblock %} 

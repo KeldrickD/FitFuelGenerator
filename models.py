@@ -4,24 +4,93 @@ from flask_login import UserMixin
 import logging
 from extensions import db
 
-class Trainer(db.Model):
+class Trainer(UserMixin, db.Model):
     __tablename__ = 'trainer'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256))
     business_name = db.Column(db.String(120))
+    profile_image_url = db.Column(db.String(500))
+    phone_number = db.Column(db.String(20))
+    timezone = db.Column(db.String(50))
+    specializations = db.Column(db.JSON, default=list)
+    years_experience = db.Column(db.Integer)
+    certifications = db.Column(db.JSON, default=list)
+    social_media = db.Column(db.JSON, default=dict)
     clients = db.relationship('Client', backref='trainer', lazy=True)
     plans = db.relationship('Plan', backref='trainer', lazy=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
+    is_active = db.Column(db.Boolean, default=True)
+    subscription_status = db.Column(db.String(20), default='free')  # free, premium
+    subscription_end_date = db.Column(db.DateTime)
+    branding_settings = db.Column(db.JSON, default=dict)  # Store logo URL, colors, etc.
+
+    def get_id(self):
+        return str(self.id)
+
+    def check_subscription(self):
+        """Check if the trainer's subscription is active"""
+        if self.subscription_status == 'free':
+            return True
+        if self.subscription_end_date and self.subscription_end_date > datetime.utcnow():
+            return True
+        return False
+
+    def can_create_plan(self):
+        """Check if the trainer can create a new plan based on their subscription"""
+        if self.subscription_status == 'premium':
+            return True
+        
+        # For free tier, check if they've created a plan this month
+        start_of_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        plans_this_month = Plan.query.filter(
+            Plan.trainer_id == self.id,
+            Plan.created_at >= start_of_month
+        ).count()
+        
+        return plans_this_month < 1
+
+    def update_last_login(self):
+        """Update the last login timestamp"""
+        self.last_login = datetime.utcnow()
+        db.session.commit()
+
+    def get_client_stats(self):
+        """Get statistics about the trainer's clients"""
+        total_clients = len(self.clients)
+        active_clients = sum(1 for c in self.clients if any(p.status == 'active' for p in c.plans))
+        total_plans = sum(len(c.plans) for c in self.clients)
+        
+        return {
+            'total_clients': total_clients,
+            'active_clients': active_clients,
+            'total_plans': total_plans,
+            'success_rate': (active_clients / total_clients * 100) if total_clients > 0 else 0
+        }
 
 class Client(db.Model):
     __tablename__ = 'client'
+    __table_args__ = (
+        db.Index('idx_trainer_client', 'trainer_id', 'created_at'),
+        db.Index('idx_client_email', 'email'),
+    )
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
     trainer_id = db.Column(db.Integer, db.ForeignKey('trainer.id'), nullable=False)
     fitness_level = db.Column(db.String(20), nullable=False)
     diet_preference = db.Column(db.String(50))
     goal = db.Column(db.String(50))
+    height = db.Column(db.Float)  # in cm
+    weight = db.Column(db.Float)  # in kg
+    age = db.Column(db.Integer)
+    gender = db.Column(db.String(20))
+    medical_conditions = db.Column(db.JSON, default=list)
+    emergency_contact = db.Column(db.JSON)
+    preferred_workout_time = db.Column(db.String(20))
+    equipment_access = db.Column(db.JSON, default=list)
     plans = db.relationship('Plan', backref='client', lazy=True)
     progress_logs = db.relationship('ProgressLog', backref='client', lazy=True)
     allergies = db.Column(db.JSON, default=list)  # Store allergies as a list
@@ -85,6 +154,12 @@ class ProgressLog(db.Model):
     notes = db.Column(db.Text)
     metrics = db.Column(db.JSON)  # Stores key performance metrics
     ai_insights = db.Column(db.JSON)  # Stores AI-generated insights
+    body_measurements = db.Column(db.JSON)
+    progress_photos = db.Column(db.JSON, default=list)
+    mood_rating = db.Column(db.Integer)
+    energy_level = db.Column(db.Integer)
+    sleep_quality = db.Column(db.Integer)
+    workout_difficulty = db.Column(db.Integer)
 
 class ExerciseProgression(db.Model):
     __tablename__ = 'exercise_progression'
@@ -148,19 +223,28 @@ class MealPlan(db.Model):
     status = db.Column(db.String(20), default='active')
 
 class Goal(db.Model):
-    __tablename__ = 'goal'
+    """Model for tracking fitness goals"""
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
-    goal_type = db.Column(db.String(50), nullable=False)  # weight_loss, strength, endurance, etc.
-    target_value = db.Column(db.Float)  # The target number (e.g., target weight)
-    current_value = db.Column(db.Float)  # Current progress
-    start_date = db.Column(db.Date, nullable=False)
-    target_date = db.Column(db.Date, nullable=False)
-    status = db.Column(db.String(20), default='in_progress')  # in_progress, completed, missed
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    client_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    milestones = db.relationship('GoalMilestone', backref='goal', lazy=True)
-    progress_updates = db.relationship('GoalProgress', backref='goal', lazy=True)
+    target_value = db.Column(db.Float)
+    current_value = db.Column(db.Float)
+    unit = db.Column(db.String(20))
+    start_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    target_date = db.Column(db.DateTime)
+    completed = db.Column(db.Boolean, default=False)
+    
+    @property
+    def progress(self):
+        """Calculate progress as a percentage"""
+        if self.target_value and self.current_value is not None:
+            progress = (self.current_value / self.target_value) * 100
+            return min(100, max(0, progress))  # Clamp between 0 and 100
+        return 0
+
+    def __repr__(self):
+        return f'<Goal {self.name}>'
 
 class GoalMilestone(db.Model):
     __tablename__ = 'goal_milestone'
@@ -456,8 +540,6 @@ class ChallengeParticipant(db.Model):
             # Award points to client
             self.client.points += challenge.reward_points
 
-
-
 class LeaderboardEntry(db.Model):
     __tablename__ = 'leaderboard_entry'
     id = db.Column(db.Integer, primary_key=True)
@@ -482,3 +564,160 @@ class LeaderboardEntry(db.Model):
         for index, entry in enumerate(entries, 1):
             entry.rank = index
             entry.last_updated = datetime.utcnow()
+
+class ProgressMetric(db.Model):
+    """Model for tracking various progress metrics"""
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    metric_type = db.Column(db.String(50), nullable=False)  # weight, chest, waist, etc.
+    value = db.Column(db.Float, nullable=False)
+    unit = db.Column(db.String(20), nullable=False)  # kg, cm, etc.
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    notes = db.Column(db.Text)
+
+    def __repr__(self):
+        return f'<ProgressMetric {self.metric_type}: {self.value}{self.unit}>'
+
+class ProgressPhoto(db.Model):
+    """Model for storing progress photos"""
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    notes = db.Column(db.Text)
+
+    @property
+    def url(self):
+        """Get the URL for the progress photo"""
+        from flask import url_for
+        return url_for('static', filename=f'progress_photos/{self.filename}')
+
+    def __repr__(self):
+        return f'<ProgressPhoto {self.filename}>'
+
+class Recipe(db.Model):
+    __tablename__ = 'recipes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    calories = db.Column(db.Integer, nullable=False)
+    protein = db.Column(db.Float, nullable=False)
+    carbs = db.Column(db.Float, nullable=False)
+    fat = db.Column(db.Float, nullable=False)
+    prep_time = db.Column(db.String(20))
+    cook_time = db.Column(db.String(20))
+    servings = db.Column(db.Integer, default=1)
+    prep_instructions = db.Column(db.Text)
+    
+    # Dietary Restrictions
+    is_vegetarian = db.Column(db.Boolean, default=False)
+    is_vegan = db.Column(db.Boolean, default=False)
+    is_gluten_free = db.Column(db.Boolean, default=False)
+    is_dairy_free = db.Column(db.Boolean, default=False)
+    is_keto = db.Column(db.Boolean, default=False)
+    is_paleo = db.Column(db.Boolean, default=False)
+    is_low_carb = db.Column(db.Boolean, default=False)
+    
+    # Allergens (stored as a JSON array)
+    allergens = db.Column(db.JSON, default=list)
+    
+    # Nutrition Labels
+    is_high_protein = db.Column(db.Boolean, default=False)
+    is_low_fat = db.Column(db.Boolean, default=False)
+    is_low_calorie = db.Column(db.Boolean, default=False)
+    
+    ingredients = db.relationship('RecipeIngredient', backref='recipe', lazy=True)
+    instructions = db.relationship('CookingInstruction', backref='recipe', lazy=True, order_by='CookingInstruction.step_number')
+
+    def __repr__(self):
+        return f'<Recipe {self.name}>'
+
+    def update_nutrition_labels(self):
+        """Update nutrition labels based on macros"""
+        self.is_high_protein = self.protein >= 25  # 25g or more per serving
+        self.is_low_fat = self.fat <= 3  # 3g or less per serving
+        self.is_low_calorie = self.calories <= 400  # 400 calories or less per serving
+
+    def check_allergens(self):
+        """Update allergens list based on ingredients"""
+        allergen_keywords = {
+            'milk': ['milk', 'dairy', 'cheese', 'yogurt', 'cream', 'butter', 'whey'],
+            'eggs': ['egg', 'eggs', 'mayonnaise'],
+            'fish': ['fish', 'salmon', 'tuna', 'cod', 'tilapia'],
+            'shellfish': ['shrimp', 'crab', 'lobster', 'shellfish'],
+            'tree_nuts': ['almond', 'cashew', 'walnut', 'pecan', 'pistachio'],
+            'peanuts': ['peanut', 'peanuts'],
+            'wheat': ['wheat', 'flour', 'bread', 'pasta'],
+            'soy': ['soy', 'tofu', 'edamame']
+        }
+        
+        found_allergens = set()
+        for ingredient in self.ingredients:
+            ingredient_name = ingredient.name.lower()
+            for allergen, keywords in allergen_keywords.items():
+                if any(keyword in ingredient_name for keyword in keywords):
+                    found_allergens.add(allergen)
+        
+        self.allergens = list(found_allergens)
+
+    def check_dietary_restrictions(self):
+        """Update dietary restriction flags based on ingredients"""
+        non_vegetarian = ['chicken', 'beef', 'pork', 'fish', 'meat', 'gelatin']
+        non_vegan = non_vegetarian + ['milk', 'cheese', 'egg', 'honey', 'yogurt']
+        non_gluten_free = ['wheat', 'barley', 'rye', 'flour', 'pasta', 'bread']
+        non_dairy_free = ['milk', 'cheese', 'cream', 'yogurt', 'butter']
+        
+        ingredient_names = [i.name.lower() for i in self.ingredients]
+        
+        self.is_vegetarian = not any(any(non_veg in name for name in ingredient_names) 
+                                   for non_veg in non_vegetarian)
+        self.is_vegan = not any(any(non_veg in name for name in ingredient_names) 
+                               for non_veg in non_vegan)
+        self.is_gluten_free = not any(any(non_gf in name for name in ingredient_names) 
+                                     for non_gf in non_gluten_free)
+        self.is_dairy_free = not any(any(dairy in name for name in ingredient_names) 
+                                    for dairy in non_dairy_free)
+        self.is_keto = self.carbs <= 10  # 10g or less net carbs per serving
+        self.is_low_carb = self.carbs <= 20  # 20g or less net carbs per serving
+        self.is_paleo = (self.is_gluten_free and self.is_dairy_free and 
+                        not any('processed' in name for name in ingredient_names))
+
+class RecipeIngredient(db.Model):
+    __tablename__ = 'recipe_ingredients'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    unit = db.Column(db.String(20), nullable=False)
+
+    def __repr__(self):
+        return f'<RecipeIngredient {self.name}>'
+
+class CookingInstruction(db.Model):
+    __tablename__ = 'cooking_instructions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), nullable=False)
+    step_number = db.Column(db.Integer, nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    duration = db.Column(db.Integer)  # Duration in minutes, null if no timer needed
+
+    def __repr__(self):
+        return f'<CookingInstruction {self.step_number}>'
+
+class SharingAnalytics(db.Model):
+    """Track user sharing activities"""
+    __tablename__ = 'sharing_analytics'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    content_type = db.Column(db.String(50), nullable=False)  # 'workout', 'meal_plan', 'challenge', 'achievement', 'weekly_summary'
+    content_id = db.Column(db.Integer, nullable=True)  # ID of the specific content, if applicable
+    platform = db.Column(db.String(30), nullable=False)  # 'facebook', 'twitter', 'linkedin', 'pinterest', 'instagram', 'copy_link', 'image'
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    client = db.relationship('Client', backref=db.backref('sharing_activities', lazy=True))
+    
+    def __repr__(self):
+        return f'<SharingAnalytics {self.id} - {self.client_id} - {self.content_type} - {self.platform}>'

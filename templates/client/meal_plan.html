@@ -1,0 +1,840 @@
+{% extends "layout.html" %}
+
+{% block title %}Meal Plan{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Mobile Header -->
+    <div class="lg:hidden mb-6">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Meal Plan</h1>
+            <button onclick="history.back()" class="text-gray-500 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Date Navigation -->
+    <div class="flex items-center justify-between mb-6">
+        <button onclick="changeDate(-1)" class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+        <div class="text-lg font-medium text-gray-900 dark:text-white" id="currentDate">
+            {{ current_date.strftime('%A, %B %d') }}
+        </div>
+        <button onclick="changeDate(1)" class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Daily Overview -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Daily Overview</h2>
+        </div>
+        <div class="p-4">
+            <div class="grid grid-cols-3 gap-4 mb-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ daily_totals.calories }}</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Calories</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ daily_totals.protein }}g</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Protein</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ daily_totals.water }}ml</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Water</div>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Carbs</span>
+                    <span class="text-sm text-gray-900 dark:text-white">{{ daily_totals.carbs }}g</span>
+                </div>
+                <div class="overflow-hidden h-2 rounded bg-gray-200 dark:bg-gray-700">
+                    <div class="h-2 rounded bg-blue-500" style="width: {% raw %}{{ (daily_totals.carbs / macro_targets.carbs * 100)|round }}{% endraw %}%"></div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Fat</span>
+                    <span class="text-sm text-gray-900 dark:text-white">{{ daily_totals.fat }}g</span>
+                </div>
+                <div class="overflow-hidden h-2 rounded bg-gray-200 dark:bg-gray-700">
+                    <div class="h-2 rounded bg-yellow-500" style="width: {% raw %}{{ (daily_totals.fat / macro_targets.fat * 100)|round }}{% endraw %}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Nutrition Journey -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Share Your Nutrition Journey</h2>
+        </div>
+        <div class="p-4">
+            <div class="flex flex-wrap gap-3">
+                <button onclick="shareMealPlanOnFacebook()" class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/>
+                    </svg>
+                    Share on Facebook
+                </button>
+                <button onclick="shareMealPlanOnTwitter()" class="flex items-center px-4 py-2 bg-sky-500 text-white rounded-md hover:bg-sky-600">
+                    <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
+                    </svg>
+                    Share on Twitter
+                </button>
+                <button onclick="shareMealPlanOnLinkedIn()" class="flex items-center px-4 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-800">
+                    <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+                    </svg>
+                    Share on LinkedIn
+                </button>
+                <button onclick="shareMealPlanOnPinterest()" class="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                    <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9.04 21.54c.96.29 1.93.46 2.96.46a10 10 0 0 0 10-10A10 10 0 0 0 12 2 10 10 0 0 0 2 12c0 4.25 2.67 7.9 6.44 9.34-.09-.78-.18-2.07 0-2.96l1.15-4.94s-.29-.58-.29-1.5c0-1.38.86-2.41 1.84-2.41.86 0 1.26.63 1.26 1.44 0 .86-.57 2.09-.86 3.27-.17.98.52 1.84 1.52 1.84 1.78 0 3.16-1.9 3.16-4.58 0-2.4-1.72-4.04-4.19-4.04-2.82 0-4.48 2.1-4.48 4.31 0 .86.28 1.73.74 2.3.09.06.09.14.06.29l-.29 1.09c0 .17-.11.23-.28.11-1.28-.56-2.02-2.38-2.02-3.85 0-3.16 2.24-6.03 6.56-6.03 3.44 0 6.12 2.47 6.12 5.75 0 3.44-2.13 6.2-5.18 6.2-.97 0-1.92-.52-2.26-1.13l-.67 2.37c-.23.86-.86 2.01-1.29 2.7v-.03z"/>
+                    </svg>
+                    Share on Pinterest
+                </button>
+                <button onclick="shareMealPlanViaLink()" class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    Copy Link
+                </button>
+                <button onclick="generateMealPlanImage()" class="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Generate Image
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meals -->
+    <div class="space-y-6">
+        {% for meal in meals %}
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ meal.name }}</h3>
+                <span class="text-sm text-gray-500 dark:text-gray-400">{{ meal.time }}</span>
+            </div>
+            <div class="p-4">
+                <div class="space-y-4">
+                    {% for item in meal.items %}
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <button onclick="showRecipeDetails({% raw %}{{ item.id }}{% endraw %})" class="text-left">
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ item.name }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ item.portion }} • {{ item.calories }}cal</div>
+                            </button>
+                        </div>
+                        <button onclick="toggleCompleted({% raw %}{{ meal.id }}{% endraw %}, {% raw %}{{ item.id }}{% endraw %})" 
+                                class="p-2 rounded-full {% raw %}{% if item.completed %}{% endraw %}bg-green-100 text-green-600{% raw %}{% else %}{% endraw %}bg-gray-100 text-gray-400{% raw %}{% endif %}{% endraw %} hover:bg-opacity-75">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Shopping List -->
+    <div class="fixed bottom-4 right-4">
+        <button onclick="showShoppingList()" 
+                class="bg-indigo-600 text-white rounded-full p-4 shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<!-- Shopping List Modal -->
+<div id="shopping-list-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Shopping List</h3>
+            <button onclick="hideShoppingList()" class="text-gray-400 hover:text-gray-500">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 overflow-y-auto">
+            {% for category, items in shopping_list.items() %}
+            <div class="mb-4">
+                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ category }}</h4>
+                <div class="space-y-2">
+                    {% for item in items %}
+                    <div class="flex items-center">
+                        <input type="checkbox" id="item-{{ item.id }}" class="h-4 w-4 text-indigo-600 rounded border-gray-300">
+                        <label for="item-{{ item.id }}" class="ml-2 text-sm text-gray-900 dark:text-white">
+                            {{ item.name }} ({{ item.amount }} {{ item.unit }})
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+            <button onclick="shareShoppingList()" class="w-full bg-indigo-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-indigo-700">
+                Share List
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Recipe Modal -->
+<div id="recipe-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white" id="recipe-title">Recipe Details</h3>
+            <div class="flex space-x-2">
+                <button onclick="showSubstitutions(currentRecipeId)" class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                    </svg>
+                </button>
+                <button onclick="hideRecipeDetails()" class="text-gray-400 hover:text-gray-500">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="p-4 overflow-y-auto">
+            <!-- Time and Servings -->
+            <div class="mb-6">
+                <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <div>
+                        <span id="recipe-prep-time"></span> prep
+                        • <span id="recipe-cook-time"></span> cook
+                    </div>
+                    <div>
+                        <span id="recipe-servings"></span> servings
+                    </div>
+                </div>
+                <!-- Timer Controls -->
+                <div class="flex items-center space-x-2">
+                    <select id="timer-duration" class="text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                        <option value="">Select timer...</option>
+                    </select>
+                    <button onclick="startTimer()" id="start-timer" class="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                        Start Timer
+                    </button>
+                </div>
+                <!-- Active Timer Display -->
+                <div id="active-timer" class="hidden mt-2 p-2 bg-indigo-50 dark:bg-indigo-900 rounded-md">
+                    <div class="flex justify-between items-center">
+                        <span id="timer-label" class="text-sm text-indigo-700 dark:text-indigo-300"></span>
+                        <div class="flex items-center space-x-2">
+                            <span id="timer-display" class="text-lg font-medium text-indigo-700 dark:text-indigo-300"></span>
+                            <button onclick="stopTimer()" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="w-full bg-indigo-200 dark:bg-indigo-800 h-1 mt-2 rounded-full">
+                        <div id="timer-progress" class="bg-indigo-600 h-1 rounded-full transition-all duration-1000" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nutrition Facts -->
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Nutrition Facts</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Calories</span>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white" id="recipe-calories"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Protein</span>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white" id="recipe-protein"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Carbs</span>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white" id="recipe-carbs"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Fat</span>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white" id="recipe-fat"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prep Instructions -->
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Prep Instructions</h4>
+                <ol class="space-y-2 list-decimal list-inside" id="recipe-prep-instructions"></ol>
+            </div>
+
+            <!-- Ingredients -->
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Ingredients</h4>
+                <ul class="space-y-2" id="recipe-ingredients"></ul>
+            </div>
+
+            <!-- Cooking Instructions -->
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Cooking Instructions</h4>
+                <ol class="space-y-4" id="recipe-instructions"></ol>
+            </div>
+
+            <!-- Substitutions -->
+            <div>
+                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Substitutions</h4>
+                <div id="recipe-substitutions" class="space-y-4">
+                    <!-- Substitutions will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recipe Substitutions Modal -->
+<div id="substitutions-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Meal Alternatives</h3>
+            <button onclick="hideSubstitutions()" class="text-gray-400 hover:text-gray-500">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 overflow-y-auto">
+            <div id="substitutions-loading" class="text-center py-8">
+                <svg class="animate-spin h-8 w-8 mx-auto text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Finding meal alternatives...</p>
+            </div>
+            <div id="substitutions-empty" class="hidden text-center py-8">
+                <svg class="h-16 w-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No alternatives found matching your preferences</p>
+            </div>
+            <div id="substitutions-list" class="hidden space-y-4">
+                <!-- Substitutions will be inserted here -->
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+            <button onclick="hideSubstitutions()" class="w-full bg-indigo-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-indigo-700">
+                Back to Recipe
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentDate = new Date('{{ current_date.isoformat() }}');
+
+function changeDate(offset) {
+    currentDate.setDate(currentDate.getDate() + offset);
+    loadMealPlan(currentDate);
+}
+
+async function loadMealPlan(date) {
+    showLoading();
+    try {
+        const response = await fetch(`/api/meal-plan?date=${date.toISOString().split('T')[0]}`);
+        if (response.ok) {
+            location.reload();
+        } else {
+            throw new Error('Failed to load meal plan');
+        }
+    } catch (error) {
+        console.error('Error loading meal plan:', error);
+        showToast('Failed to load meal plan', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function toggleCompleted(mealId, itemId) {
+    try {
+        const response = await fetch('/api/meal-items/complete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ meal_id: mealId, item_id: itemId })
+        });
+
+        if (response.ok) {
+            showToast('Updated meal item', 'success');
+            // Update UI without reload
+            const button = event.currentTarget;
+            button.classList.toggle('bg-green-100');
+            button.classList.toggle('text-green-600');
+            button.classList.toggle('bg-gray-100');
+            button.classList.toggle('text-gray-400');
+        } else {
+            throw new Error('Failed to update meal item');
+        }
+    } catch (error) {
+        console.error('Error updating meal item:', error);
+        showToast('Failed to update meal item', 'error');
+    }
+}
+
+function showShoppingList() {
+    document.getElementById('shopping-list-modal').classList.remove('hidden');
+}
+
+function hideShoppingList() {
+    document.getElementById('shopping-list-modal').classList.add('hidden');
+}
+
+async function shareShoppingList() {
+    try {
+        const checkedItems = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(checkbox => checkbox.id.replace('item-', ''));
+
+        if (checkedItems.length === 0) {
+            showToast('Please select items to share', 'warning');
+            return;
+        }
+
+        const text = await generateShoppingListText(checkedItems);
+        if (navigator.share) {
+            await navigator.share({
+                title: 'Shopping List',
+                text: text
+            });
+        } else {
+            await navigator.clipboard.writeText(text);
+            showToast('Shopping list copied to clipboard', 'success');
+        }
+    } catch (error) {
+        console.error('Error sharing shopping list:', error);
+        showToast('Failed to share shopping list', 'error');
+    }
+}
+
+async function generateShoppingListText(itemIds) {
+    const response = await fetch('/api/shopping-list/text', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ item_ids: itemIds })
+    });
+
+    if (response.ok) {
+        const data = await response.json();
+        return data.text;
+    }
+    throw new Error('Failed to generate shopping list text');
+}
+
+let activeTimer = null;
+let timerInterval = null;
+
+let currentRecipeId = null;
+
+function showRecipeDetails(itemId) {
+    currentRecipeId = itemId;
+    document.getElementById('recipe-modal').classList.remove('hidden');
+    document.getElementById('recipe-loading').classList.remove('hidden');
+    document.getElementById('recipe-content').classList.add('hidden');
+    
+    fetch(`/api/recipe/${itemId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch recipe details');
+            }
+            return response.json();
+        })
+        .then(recipe => {
+            document.getElementById('recipe-title').textContent = recipe.name;
+            document.getElementById('recipe-calories').textContent = recipe.calories;
+            document.getElementById('recipe-protein').textContent = recipe.nutrients.protein + 'g';
+            document.getElementById('recipe-carbs').textContent = recipe.nutrients.carbs + 'g';
+            document.getElementById('recipe-fat').textContent = recipe.nutrients.fat + 'g';
+            
+            // Populate ingredients
+            const ingredientsList = document.getElementById('recipe-ingredients');
+            ingredientsList.innerHTML = '';
+            recipe.ingredients.forEach(ingredient => {
+                const li = document.createElement('li');
+                li.className = 'text-sm text-gray-600 dark:text-gray-400';
+                li.textContent = `${ingredient.amount} ${ingredient.unit} ${ingredient.name}`;
+                ingredientsList.appendChild(li);
+            });
+            
+            // Populate instructions
+            const instructionsList = document.getElementById('recipe-instructions');
+            instructionsList.innerHTML = '';
+            recipe.instructions.forEach((instruction, index) => {
+                const li = document.createElement('li');
+                li.className = 'mb-3';
+                
+                const stepNumber = document.createElement('div');
+                stepNumber.className = 'inline-flex items-center justify-center h-6 w-6 rounded-full bg-indigo-100 text-indigo-800 text-sm font-medium mr-2';
+                stepNumber.textContent = index + 1;
+                
+                const stepText = document.createElement('span');
+                stepText.className = 'text-sm text-gray-600 dark:text-gray-400';
+                stepText.textContent = instruction.text;
+                
+                li.appendChild(stepNumber);
+                li.appendChild(stepText);
+                
+                if (instruction.duration) {
+                    const timerButton = document.createElement('button');
+                    timerButton.className = 'ml-8 mt-1 inline-flex items-center text-xs text-indigo-600 hover:text-indigo-800';
+                    timerButton.innerHTML = `
+                        <img src="/static/images/timer-icon.svg" class="h-4 w-4 mr-1" />
+                        Set ${instruction.duration}m timer
+                    `;
+                    timerButton.onclick = function() {
+                        startTimer(instruction.duration * 60, `Step ${index + 1}`);
+                    };
+                    li.appendChild(document.createElement('br'));
+                    li.appendChild(timerButton);
+                }
+                
+                instructionsList.appendChild(li);
+            });
+            
+            // Add prep instructions if available
+            if (recipe.prep_instructions && recipe.prep_instructions.length > 0) {
+                const prepSection = document.getElementById('recipe-prep-section');
+                prepSection.classList.remove('hidden');
+                
+                const prepList = document.getElementById('recipe-prep-instructions');
+                prepList.innerHTML = '';
+                
+                recipe.prep_instructions.forEach((instruction, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'mb-2 text-sm text-gray-600 dark:text-gray-400';
+                    li.textContent = instruction;
+                    prepList.appendChild(li);
+                });
+            } else {
+                document.getElementById('recipe-prep-section').classList.add('hidden');
+            }
+            
+            // Update prep time, cook time, and servings
+            document.getElementById('recipe-prep-time').textContent = recipe.prep_time || 'N/A';
+            document.getElementById('recipe-cook-time').textContent = recipe.cook_time || 'N/A';
+            document.getElementById('recipe-servings').textContent = recipe.servings || '1';
+            
+            // Hide loading, show content
+            document.getElementById('recipe-loading').classList.add('hidden');
+            document.getElementById('recipe-content').classList.remove('hidden');
+        })
+        .catch(error => {
+            console.error('Error fetching recipe details:', error);
+            document.getElementById('recipe-loading').classList.add('hidden');
+            document.getElementById('recipe-error').classList.remove('hidden');
+        });
+}
+
+function hideRecipeDetails() {
+    document.getElementById('recipe-modal').classList.add('hidden');
+    currentRecipeId = null;
+}
+
+function showSubstitutions(itemId) {
+    document.getElementById('recipe-modal').classList.add('hidden');
+    document.getElementById('substitutions-modal').classList.remove('hidden');
+    document.getElementById('substitutions-loading').classList.remove('hidden');
+    document.getElementById('substitutions-empty').classList.add('hidden');
+    document.getElementById('substitutions-list').classList.add('hidden');
+    document.getElementById('substitutions-list').innerHTML = '';
+    
+    fetch(`/api/recipe/${itemId}/substitutions`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch substitutions');
+            }
+            return response.json();
+        })
+        .then(substitutions => {
+            document.getElementById('substitutions-loading').classList.add('hidden');
+            
+            if (!substitutions || substitutions.length === 0) {
+                document.getElementById('substitutions-empty').classList.remove('hidden');
+                return;
+            }
+            
+            const substitutionsList = document.getElementById('substitutions-list');
+            substitutionsList.innerHTML = '';
+            
+            substitutions.forEach(sub => {
+                const card = document.createElement('div');
+                card.className = 'bg-white dark:bg-gray-700 rounded-lg shadow p-4';
+                
+                // Create dietary tags
+                let dietaryTags = '';
+                if (sub.dietary_tags && sub.dietary_tags.length > 0) {
+                    dietaryTags = `
+                        <div class="flex flex-wrap gap-1 mt-2">
+                            ${sub.dietary_tags.map(tag => `
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                                    ${tag}
+                                </span>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                // Warning for allergens
+                let allergenWarning = '';
+                if (sub.allergens && sub.allergens.length > 0) {
+                    allergenWarning = `
+                        <div class="mt-2 text-xs text-red-500">
+                            <span class="font-bold">Contains:</span> ${sub.allergens.join(', ')}
+                        </div>
+                    `;
+                }
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-900 dark:text-white">${sub.name}</h4>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">${sub.description}</p>
+                            ${dietaryTags}
+                            ${allergenWarning}
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">${sub.calories} cal</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">${sub.nutrients.protein}g protein</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex justify-end">
+                        <button onclick="selectSubstitution(${sub.id})" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                            Select Alternative
+                        </button>
+                    </div>
+                `;
+                
+                substitutionsList.appendChild(card);
+            });
+            
+            document.getElementById('substitutions-list').classList.remove('hidden');
+        })
+        .catch(error => {
+            console.error('Error fetching substitutions:', error);
+            document.getElementById('substitutions-loading').classList.add('hidden');
+            document.getElementById('substitutions-empty').classList.remove('hidden');
+        });
+}
+
+function hideSubstitutions() {
+    document.getElementById('substitutions-modal').classList.add('hidden');
+    document.getElementById('recipe-modal').classList.remove('hidden');
+}
+
+function selectSubstitution(substitutionId) {
+    if (!currentRecipeId) return;
+    
+    fetch('/api/recipe/substitute', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            original_id: currentRecipeId,
+            substitute_id: substitutionId
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to apply substitution');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            hideSubstitutions();
+            hideRecipeDetails();
+            showToast('Meal substituted successfully', 'success');
+            
+            // Reload the page to reflect changes
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            throw new Error(data.message || 'Failed to substitute meal');
+        }
+    })
+    .catch(error => {
+        console.error('Error applying substitution:', error);
+        showToast('Failed to substitute meal', 'error');
+    });
+}
+
+function startTimer(customLabel) {
+    const duration = parseInt(document.getElementById('timer-duration').value);
+    if (!duration) return;
+
+    // Stop existing timer if any
+    stopTimer();
+
+    const label = customLabel || document.getElementById('timer-duration').selectedOptions[0].text;
+    const endTime = Date.now() + duration * 60 * 1000;
+    
+    // Show timer display
+    const timerDisplay = document.getElementById('active-timer');
+    timerDisplay.classList.remove('hidden');
+    document.getElementById('timer-label').textContent = label;
+    
+    // Update timer display
+    function updateTimer() {
+        const now = Date.now();
+        const timeLeft = Math.max(0, endTime - now);
+        const minutes = Math.floor(timeLeft / 60000);
+        const seconds = Math.floor((timeLeft % 60000) / 1000);
+        
+        document.getElementById('timer-display').textContent = 
+            `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Update progress bar
+        const progress = (timeLeft / (duration * 60 * 1000)) * 100;
+        document.getElementById('timer-progress').style.width = `${progress}%`;
+        
+        if (timeLeft === 0) {
+            stopTimer();
+            showToast(`${label} timer complete!`, 'success');
+            // Play notification sound
+            const audio = new Audio('/static/sounds/timer-complete.mp3');
+            audio.play().catch(() => {}); // Ignore if audio fails to play
+            
+            // Show browser notification if permitted
+            if (Notification.permission === 'granted') {
+                new Notification('Timer Complete', {
+                    body: `${label} is done!`,
+                    icon: '/static/images/timer-icon.png'
+                });
+            }
+        }
+    }
+    
+    // Start timer updates
+    activeTimer = endTime;
+    timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+}
+
+function stopTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    activeTimer = null;
+    document.getElementById('active-timer').classList.add('hidden');
+    document.getElementById('timer-duration').value = '';
+}
+
+// Social Media Sharing Functions
+function shareMealPlanOnFacebook() {
+    const url = encodeURIComponent(window.location.href);
+    const title = encodeURIComponent('My Meal Plan on FitFuelGenerator');
+    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&t=${title}`;
+    
+    trackShare('meal_plan', 'facebook');
+    window.open(shareUrl, 'Share on Facebook', 'width=600,height=400');
+}
+
+function shareMealPlanOnTwitter() {
+    const url = encodeURIComponent(window.location.href);
+    
+    // Fix selectors to correctly get the calories and protein values
+    const caloriesElement = document.querySelectorAll('.text-2xl.font-bold')[0];
+    const proteinElement = document.querySelectorAll('.text-2xl.font-bold')[1];
+    
+    const calories = caloriesElement ? caloriesElement.textContent : '2000';
+    const protein = proteinElement ? proteinElement.textContent : '120g';
+    
+    const text = encodeURIComponent(`I'm tracking my nutrition with FitFuelGenerator! Today's goal: ${calories} calories and ${protein} protein. #fitness #nutrition #FitFuelGenerator`);
+    const shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+    
+    trackShare('meal_plan', 'twitter');
+    window.open(shareUrl, 'Share on Twitter', 'width=600,height=400');
+}
+
+function shareMealPlanOnLinkedIn() {
+    const url = encodeURIComponent(window.location.href);
+    const title = encodeURIComponent('My Meal Plan on FitFuelGenerator');
+    const summary = encodeURIComponent('Check out my nutrition plan on FitFuelGenerator - helping me reach my fitness goals!');
+    const shareUrl = `https://www.linkedin.com/shareArticle?mini=true&url=${url}&title=${title}&summary=${summary}`;
+    
+    trackShare('meal_plan', 'linkedin');
+    window.open(shareUrl, 'Share on LinkedIn', 'width=600,height=600');
+}
+
+function shareMealPlanOnPinterest() {
+    const url = encodeURIComponent(window.location.href);
+    const description = encodeURIComponent('My FitFuelGenerator Meal Plan - Personalized nutrition for my fitness journey!');
+    const media = encodeURIComponent(window.location.origin + '/api/meal-plan/share-image');
+    const shareUrl = `https://pinterest.com/pin/create/button/?url=${url}&media=${media}&description=${description}`;
+    
+    trackShare('meal_plan', 'pinterest');
+    window.open(shareUrl, 'Share on Pinterest', 'width=600,height=600');
+}
+
+function shareMealPlanViaLink() {
+    navigator.clipboard.writeText(window.location.href)
+        .then(() => {
+            showToast('Link copied to clipboard!', 'success');
+            trackShare('meal_plan', 'copy_link');
+        })
+        .catch(err => {
+            console.error('Error copying link: ', err);
+            showToast('Failed to copy link', 'error');
+        });
+}
+
+function generateMealPlanImage() {
+    trackShare('meal_plan', 'image');
+    window.open('/api/meal-plan/share-image', '_blank');
+}
+
+// Function to track shares via API
+function trackShare(contentType, platform, contentId = null) {
+    fetch('/api/track-share', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            content_type: contentType,
+            platform: platform,
+            content_id: contentId
+        })
+    })
+    .catch(error => {
+        console.error('Error tracking share:', error);
+    });
+}
+
+// Request notification permission on page load
+if ('Notification' in window) {
+    Notification.requestPermission();
+}
+</script>
+{% endblock %} 

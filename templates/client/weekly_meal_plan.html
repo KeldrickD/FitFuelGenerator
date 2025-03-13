@@ -1,0 +1,593 @@
+{% extends "layout.html" %}
+
+{% block title %}Weekly Meal Plan{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Mobile Header -->
+    <div class="lg:hidden mb-6">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Weekly Meal Plan</h1>
+            <button onclick="history.back()" class="text-gray-500 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Week Navigation -->
+    <div class="flex items-center justify-between mb-6">
+        <button onclick="changeWeek(-1)" class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+        <div class="text-lg font-medium text-gray-900 dark:text-white" id="weekRange">
+            {{ week_start.strftime('%B %d') }} - {{ week_end.strftime('%B %d, %Y') }}
+        </div>
+        <button onclick="changeWeek(1)" class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Dietary Filters -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Dietary Preferences</h2>
+        </div>
+        <div class="p-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- Dietary Restrictions -->
+                <div class="space-y-2">
+                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Restrictions</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="toggleFilter('vegetarian')" 
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Vegetarian
+                        </button>
+                        <button onclick="toggleFilter('vegan')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Vegan
+                        </button>
+                        <button onclick="toggleFilter('gluten-free')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Gluten-Free
+                        </button>
+                        <button onclick="toggleFilter('dairy-free')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Dairy-Free
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Diet Types -->
+                <div class="space-y-2">
+                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Diet Types</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="toggleFilter('keto')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Keto
+                        </button>
+                        <button onclick="toggleFilter('paleo')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Paleo
+                        </button>
+                        <button onclick="toggleFilter('low-carb')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Low-Carb
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Allergens -->
+                <div class="space-y-2">
+                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Allergen Alerts</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="toggleFilter('milk')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Milk
+                        </button>
+                        <button onclick="toggleFilter('eggs')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Eggs
+                        </button>
+                        <button onclick="toggleFilter('fish')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Fish
+                        </button>
+                        <button onclick="toggleFilter('shellfish')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Shellfish
+                        </button>
+                        <button onclick="toggleFilter('tree-nuts')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Tree Nuts
+                        </button>
+                        <button onclick="toggleFilter('peanuts')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Peanuts
+                        </button>
+                        <button onclick="toggleFilter('wheat')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Wheat
+                        </button>
+                        <button onclick="toggleFilter('soy')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Soy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Nutrition Labels -->
+                <div class="space-y-2">
+                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Nutrition</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="toggleFilter('high-protein')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            High Protein
+                        </button>
+                        <button onclick="toggleFilter('low-fat')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Low Fat
+                        </button>
+                        <button onclick="toggleFilter('low-calorie')"
+                                class="px-3 py-1 text-sm rounded-full border transition-colors duration-200"
+                                data-active="false">
+                            Low Calorie
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Overview -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Weekly Overview</h2>
+        </div>
+        <div class="p-4">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ weekly_totals.calories }}</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Avg. Daily Calories</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ weekly_totals.protein }}g</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Avg. Daily Protein</div>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Weekly Prep Time</span>
+                    <span class="text-sm text-gray-900 dark:text-white">{{ weekly_totals.prep_time }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Grocery Budget</span>
+                    <span class="text-sm text-gray-900 dark:text-white">${{ weekly_totals.budget }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Calendar -->
+    <div class="space-y-6">
+        {% for day in days %}
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ day.date.strftime('%A') }}</h3>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ day.date.strftime('%B %d') }}</span>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ day.totals.calories }} cal</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ day.totals.protein }}g protein</div>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="space-y-4 day-meals">
+                    {% for meal in day.meals %}
+                    <div class="border-b border-gray-200 dark:border-gray-700 last:border-0 pb-4 last:pb-0">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ meal.name }}</h4>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ meal.time }}</span>
+                        </div>
+                        <div class="space-y-2">
+                            {% for item in meal.items %}
+                            <div class="meal-item"
+                                 data-restrictions='{{ item.restrictions | tojson | safe }}'
+                                 data-allergens='{{ item.allergens | tojson | safe }}'
+                                 data-nutrition='{{ item.nutrition | tojson | safe }}'>
+                                <div class="flex justify-between items-start">
+                                    <button onclick="showRecipeDetails('{{ item.id }}')" class="text-left flex-1">
+                                        <div class="text-sm text-gray-600 dark:text-gray-400">{{ item.name }}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ item.portion }} • {{ item.calories }}cal</div>
+                                        <!-- Dietary Tags -->
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            {% for restriction in item.restrictions %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                                                {{ restriction | title }}
+                                            </span>
+                                            {% endfor %}
+                                        </div>
+                                        <!-- Allergen Warnings -->
+                                        {% if item.allergens %}
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            {% for allergen in item.allergens %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                                                <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                                </svg>
+                                                {{ allergen | title }}
+                                            </span>
+                                            {% endfor %}
+                                        </div>
+                                        <!-- Nutrition Labels -->
+                                        {% if item.nutrition %}
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            {% for label in item.nutrition %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                                {{ label | title }}
+                                            </span>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </button>
+                                    <button onclick="toggleCompleted('{{ meal.id }}', '{{ item.id }}')" 
+                                            class="p-2 rounded-full {% if item.completed %}bg-green-100 text-green-600{% else %}bg-gray-100 text-gray-400{% endif %} hover:bg-opacity-75 ml-2">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="fixed bottom-4 right-4 flex flex-col space-y-2">
+        <button onclick="showWeeklyShoppingList()" 
+                class="bg-indigo-600 text-white rounded-full p-4 shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+        </button>
+        <button onclick="showMealPrepGuide()" 
+                class="bg-green-600 text-white rounded-full p-4 shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<!-- Weekly Shopping List Modal -->
+<div id="weekly-shopping-list-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Weekly Shopping List</h3>
+            <button onclick="hideWeeklyShoppingList()" class="text-gray-400 hover:text-gray-500">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 overflow-y-auto">
+            {% for category, items in weekly_shopping_list.items() %}
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{{ category }}</h4>
+                <div class="space-y-2">
+                    {% for item in items %}
+                    <div class="flex items-center">
+                        <input type="checkbox" id="item-{{ item.id }}" class="h-4 w-4 text-indigo-600 rounded border-gray-300">
+                        <label for="item-{{ item.id }}" class="ml-2 text-sm text-gray-900 dark:text-white flex-1">
+                            {{ item.name }} ({{ item.amount }} {{ item.unit }})
+                            {% if item.allergens %}
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                {% for allergen in item.allergens %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                                    <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    {{ allergen | title }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+            <div class="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+                <span>Estimated Total:</span>
+                <span>${{ weekly_totals.budget }}</span>
+            </div>
+            <button onclick="shareWeeklyShoppingList()" class="w-full bg-indigo-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-indigo-700">
+                Share List
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Meal Prep Guide Modal -->
+<div id="meal-prep-guide-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Weekly Meal Prep Guide</h3>
+            <button onclick="hideMealPrepGuide()" class="text-gray-400 hover:text-gray-500">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 overflow-y-auto">
+            <div class="space-y-6">
+                <!-- Prep Overview -->
+                <div>
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Overview</h4>
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Total Prep Time</div>
+                                <div class="text-lg font-medium text-gray-900 dark:text-white">{{ weekly_totals.prep_time }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Storage Needed</div>
+                                <div class="text-lg font-medium text-gray-900 dark:text-white">{{ weekly_totals.containers }} containers</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prep Instructions -->
+                <div>
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Prep Instructions</h4>
+                    <ol class="space-y-4">
+                        {% for step in prep_guide.steps %}
+                        <li class="flex items-start space-x-3">
+                            <span class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 text-sm">{{ loop.index }}</span>
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ step.text }}</p>
+                                {% if step.duration %}
+                                <button onclick="addTimer('Prep Step {{ loop.index }}', {{ step.duration }})"
+                                        class="mt-2 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800">
+                                    Add {{ step.duration }}m timer
+                                </button>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+
+                <!-- Storage Instructions -->
+                <div>
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Storage Instructions</h4>
+                    <div class="space-y-3">
+                        {% for instruction in prep_guide.storage %}
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            <span class="font-medium">{{ instruction.item }}:</span>
+                            {{ instruction.text }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentWeekStart = new Date('{{ week_start.isoformat() }}');
+
+function changeWeek(offset) {
+    currentWeekStart.setDate(currentWeekStart.getDate() + (offset * 7));
+    loadWeeklyMealPlan(currentWeekStart);
+}
+
+async function loadWeeklyMealPlan(date) {
+    showLoading();
+    try {
+        const response = await fetch(`/api/weekly-meal-plan?start_date=${date.toISOString().split('T')[0]}`);
+        if (response.ok) {
+            location.reload();
+        } else {
+            throw new Error('Failed to load weekly meal plan');
+        }
+    } catch (error) {
+        console.error('Error loading weekly meal plan:', error);
+        showToast('Failed to load weekly meal plan', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function showRecipeDetails(itemId) {
+    // Convert string ID to number if needed
+    const id = parseInt(itemId, 10);
+    window.location.href = `/recipe/${id}`;
+}
+
+async function toggleCompleted(mealId, itemId) {
+    try {
+        const response = await fetch('/api/meal-items/complete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                meal_id: parseInt(mealId, 10),
+                item_id: parseInt(itemId, 10)
+            })
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            throw new Error('Failed to update meal item');
+        }
+    } catch (error) {
+        console.error('Error updating meal item:', error);
+        showToast('Failed to update meal item', 'error');
+    }
+}
+
+function toggleFilter(filter) {
+    const button = document.querySelector(`button[onclick="toggleFilter('${filter}')"]`);
+    const isActive = button.getAttribute('data-active') === 'true';
+    
+    // Toggle active state
+    button.setAttribute('data-active', !isActive);
+    
+    // Update button styles
+    if (!isActive) {
+        button.classList.add('bg-indigo-100', 'border-indigo-500', 'text-indigo-700', 'dark:bg-indigo-900', 'dark:border-indigo-400', 'dark:text-indigo-300');
+        button.classList.remove('border-gray-300', 'text-gray-700', 'dark:border-gray-600', 'dark:text-gray-400');
+    } else {
+        button.classList.remove('bg-indigo-100', 'border-indigo-500', 'text-indigo-700', 'dark:bg-indigo-900', 'dark:border-indigo-400', 'dark:text-indigo-300');
+        button.classList.add('border-gray-300', 'text-gray-700', 'dark:border-gray-600', 'dark:text-gray-400');
+    }
+    
+    // Get all active filters
+    const activeFilters = Array.from(document.querySelectorAll('button[data-active="true"]'))
+        .map(btn => btn.textContent.trim().toLowerCase());
+    
+    // Update meal visibility based on filters
+    updateMealVisibility(activeFilters);
+}
+
+function updateMealVisibility(activeFilters) {
+    const meals = document.querySelectorAll('.meal-item');
+    meals.forEach(meal => {
+        const restrictions = JSON.parse(meal.getAttribute('data-restrictions') || '[]');
+        const allergens = JSON.parse(meal.getAttribute('data-allergens') || '[]');
+        const nutrition = JSON.parse(meal.getAttribute('data-nutrition') || '[]');
+        
+        const shouldShow = activeFilters.every(filter => {
+            // Check dietary restrictions
+            if (['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'keto', 'paleo', 'low-carb'].includes(filter)) {
+                return restrictions.includes(filter);
+            }
+            // Check allergens (show if the meal doesn't contain the allergen)
+            if (['milk', 'eggs', 'fish', 'shellfish', 'tree-nuts', 'peanuts', 'wheat', 'soy'].includes(filter)) {
+                return !allergens.includes(filter);
+            }
+            // Check nutrition labels
+            if (['high-protein', 'low-fat', 'low-calorie'].includes(filter)) {
+                return nutrition.includes(filter);
+            }
+            return true;
+        });
+        
+        meal.style.display = shouldShow ? '' : 'none';
+    });
+    
+    // Update empty state messages
+    document.querySelectorAll('.day-meals').forEach(dayMeals => {
+        const visibleMeals = dayMeals.querySelectorAll('.meal-item:not([style*="display: none"])');
+        const emptyMessage = dayMeals.querySelector('.empty-message');
+        
+        if (visibleMeals.length === 0) {
+            if (!emptyMessage) {
+                const message = document.createElement('div');
+                message.className = 'empty-message text-sm text-gray-500 dark:text-gray-400 text-center py-4';
+                message.textContent = 'No meals match the selected filters';
+                dayMeals.appendChild(message);
+            }
+        } else if (emptyMessage) {
+            emptyMessage.remove();
+        }
+    });
+}
+
+function showWeeklyShoppingList() {
+    document.getElementById('weekly-shopping-list-modal').classList.remove('hidden');
+}
+
+function hideWeeklyShoppingList() {
+    document.getElementById('weekly-shopping-list-modal').classList.add('hidden');
+}
+
+function showMealPrepGuide() {
+    document.getElementById('meal-prep-guide-modal').classList.remove('hidden');
+}
+
+function hideMealPrepGuide() {
+    document.getElementById('meal-prep-guide-modal').classList.add('hidden');
+}
+
+async function shareWeeklyShoppingList() {
+    try {
+        const checkedItems = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(checkbox => checkbox.id.replace('item-', ''));
+
+        if (checkedItems.length === 0) {
+            showToast('Please select items to share', 'warning');
+            return;
+        }
+
+        const response = await fetch('/api/weekly-shopping-list/text', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                item_ids: checkedItems,
+                week_start: currentWeekStart.toISOString().split('T')[0]
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'Weekly Shopping List',
+                    text: data.text
+                });
+            } else {
+                await navigator.clipboard.writeText(data.text);
+                showToast('Shopping list copied to clipboard', 'success');
+            }
+        } else {
+            throw new Error('Failed to generate shopping list');
+        }
+    } catch (error) {
+        console.error('Error sharing shopping list:', error);
+        showToast('Failed to share shopping list', 'error');
+    }
+}
+</script>
+{% endblock %} 

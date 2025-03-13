@@ -1,0 +1,304 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Client Header -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ client.name }}</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ client.email }}</p>
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="openEditClient()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        Edit Client
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Details Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- Progress Overview -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Progress Overview</h3>
+            </div>
+            <div class="p-6">
+                <!-- Progress Stats -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Current Weight</p>
+                        <p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">{{ client.weight|default('N/A') }} kg</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Overall Completion</p>
+                        <p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">{{ completion_rate|default('0') }}%</p>
+                    </div>
+                </div>
+
+                <!-- Workout Stats -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Current Streak</p>
+                        <div class="flex items-baseline">
+                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ current_streak }}</p>
+                            <p class="ml-1 text-sm text-gray-600 dark:text-gray-400">days</p>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Best: {{ best_streak }} days</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">This Week</p>
+                        <div class="flex items-baseline">
+                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ weekly_completed }}/{{ weekly_total }}</p>
+                            <p class="ml-1 text-sm text-gray-600 dark:text-gray-400">workouts</p>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ weekly_completion }}% completion</p>
+                    </div>
+                </div>
+
+                <!-- Workout Completion Update -->
+                <div class="mt-6">
+                    <h4 class="text-md font-medium text-gray-900 dark:text-white mb-4">Update Workout Status</h4>
+                    <div class="flex items-center space-x-4">
+                        <input type="date" id="workoutDate" 
+                               class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                               value="{{ today_date }}">
+                        <select id="workoutStatus" 
+                                class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="true">Completed</option>
+                            <option value="false">Not Completed</option>
+                        </select>
+                        <button onclick="updateWorkoutStatus()" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Update Status
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Client Info -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Client Information</h3>
+            </div>
+            <div class="p-6">
+                <dl class="grid grid-cols-1 gap-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-600 dark:text-gray-400">Fitness Level</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ client.fitness_level|title }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-600 dark:text-gray-400">Goal</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ client.goal|default('Not set')|title }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-600 dark:text-gray-400">Diet Preference</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ client.diet_preference|default('No preference')|title }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-600 dark:text-gray-400">Equipment Access</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">
+                            {% if client.equipment_access %}
+                                {{ client.equipment_access|join(', ')|title }}
+                            {% else %}
+                                Limited
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Progress -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Workout Calendar</h3>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-7 gap-1 mb-2">
+                <div class="text-center text-sm font-medium text-gray-600 dark:text-gray-400">Sun</div>
+                <div class="text-center text-sm font-medium text-gray-600 dark:text-gray-400">Mon</div>
+                <div class="text-center text-sm font-medium text-gray-600 dark:text-gray-400">Tue</div>
+                <div class="text-center text-sm font-medium text-gray-600 dark:text-gray-400">Wed</div>
+                <div class="text-center text-sm font-medium text-gray-600 dark:text-gray-400">Thu</div>
+                <div class="text-center text-sm font-medium text-gray-600 dark:text-gray-400">Fri</div>
+                <div class="text-center text-sm font-medium text-gray-600 dark:text-gray-400">Sat</div>
+            </div>
+            <div id="calendar-grid" class="grid grid-cols-7 gap-1">
+                <!-- Calendar days will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Progress -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Recent Progress</h3>
+        </div>
+        <div class="p-6">
+            {% if progress_logs %}
+                <div class="space-y-4">
+                    {% for log in progress_logs %}
+                        <div class="border-l-4 {% if log.workout_completed %}border-green-500{% else %}border-yellow-500{% endif %} bg-gray-50 dark:bg-gray-700 p-4">
+                            <div class="flex justify-between">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ log.log_date.strftime('%B %d, %Y') }}</p>
+                                {% if log.workout_completed %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                        Workout Complete
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                {% if log.metrics %}
+                                    <p>Weight: {{ log.metrics.weight }}kg</p>
+                                    {% if log.metrics.body_fat %}
+                                        <p>Body Fat: {{ log.metrics.body_fat }}%</p>
+                                    {% endif %}
+                                {% endif %}
+                                {% if log.notes %}
+                                    <p class="mt-1">{{ log.notes }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-600 dark:text-gray-400">No progress logs yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// Get initial data from template
+const CLIENT_ID = {{ client.id if client else 'null' }};
+const PROGRESS_LOGS = {{ progress_logs | map(attribute='log_date.strftime', args=['%Y-%m-%d']) | list | tojson | safe if progress_logs else '[]' }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    populateCalendar();
+    document.getElementById('updateWorkoutBtn').addEventListener('click', updateWorkoutStatus);
+});
+
+function updateWorkoutStatus() {
+    const date = document.getElementById('workoutDate').value;
+    const completed = document.getElementById('workoutStatus').value === 'true';
+    
+    if (!CLIENT_ID) {
+        showToast('Error', 'Client ID not found', 'error');
+        return;
+    }
+    
+    fetch(`/trainer/client/${CLIENT_ID}/update-workout-completion`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            log_date: date,
+            completed: completed
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast('Success', 'Workout status updated successfully', 'success');
+            location.reload();
+        } else {
+            showToast('Error', data.error || 'Failed to update workout status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error', 'Failed to update workout status', 'error');
+    });
+}
+
+function showToast(title, message, type = 'info') {
+    alert(`${title}: ${message}`);
+}
+
+function populateCalendar() {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    const completedWorkouts = new Set(PROGRESS_LOGS);
+    const calendarGrid = document.getElementById('calendar-grid');
+    calendarGrid.innerHTML = '';
+    
+    for (let i = 0; i < firstDay.getDay(); i++) {
+        calendarGrid.appendChild(createCalendarCell(''));
+    }
+    
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(today.getFullYear(), today.getMonth(), day);
+        const dateString = date.toISOString().split('T')[0];
+        const isCompleted = completedWorkouts.has(dateString);
+        
+        const cell = createCalendarCell(day, isCompleted, dateString === today.toISOString().split('T')[0]);
+        calendarGrid.appendChild(cell);
+    }
+}
+
+function createCalendarCell(content, isCompleted = false, isToday = false) {
+    const cell = document.createElement('div');
+    const classes = [
+        'h-12',
+        'flex',
+        'items-center',
+        'justify-center',
+        'rounded-lg'
+    ];
+
+    if (isToday) {
+        classes.push('ring-2', 'ring-indigo-600', 'dark:ring-indigo-400');
+    }
+    if (content) {
+        classes.push('hover:bg-gray-50', 'dark:hover:bg-gray-700', 'cursor-pointer');
+    }
+    if (isCompleted) {
+        classes.push('bg-green-100', 'dark:bg-green-900');
+    } else {
+        classes.push('bg-gray-50', 'dark:bg-gray-800');
+    }
+
+    cell.className = classes.join(' ');
+    
+    if (content) {
+        const textClasses = [
+            'text-sm',
+            'font-medium',
+            isCompleted ? 'text-green-800 dark:text-green-200' : 'text-gray-900 dark:text-white'
+        ];
+
+        cell.innerHTML = `<span class="${textClasses.join(' ')}">${content}</span>`;
+        
+        if (typeof content === 'number') {
+            cell.addEventListener('click', () => {
+                const date = new Date(
+                    new Date().getFullYear(),
+                    new Date().getMonth(),
+                    content
+                );
+                document.getElementById('workoutDate').value = date.toISOString().split('T')[0];
+                document.getElementById('workoutStatus').value = !isCompleted;
+                updateWorkoutStatus();
+            });
+        }
+    }
+    
+    return cell;
+}
+</script>
+{% endblock %}
+
+{% endblock %}

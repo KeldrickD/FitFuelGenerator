@@ -1,0 +1,315 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <!-- Mobile Navigation -->
+    <nav class="bg-indigo-600 dark:bg-indigo-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-white font-bold">FitFuel</h1>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <button id="mobile-menu-button" class="text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden sm:hidden bg-indigo-700 dark:bg-indigo-900">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="{{ url_for('client_portal.dashboard') }}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
+                <a href="{{ url_for('client_portal.log_progress') }}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Log Progress</a>
+                <a href="{{ url_for('client_portal.goals') }}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Goals</a>
+                <a href="{{ url_for('client_portal.view_plan') }}" class="text-white block px-3 py-2 rounded-md text-base font-medium">My Plan</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Welcome Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow px-5 py-6 sm:px-6 mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Welcome back, {{ current_user.name }}!</h2>
+                <p class="text-gray-600 dark:text-gray-400">Here's your fitness journey at a glance</p>
+            </div>
+
+            <!-- Progress Charts -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Weight Progress Chart -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Weight Progress</h3>
+                    <div class="h-64">
+                        <canvas id="weightChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Body Fat Progress Chart -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Body Fat Progress</h3>
+                    <div class="h-64">
+                        <canvas id="bodyFatChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workout Completion Chart -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Workout Completion</h3>
+                <div class="h-64">
+                    <canvas id="workoutChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <a href="{{ url_for('client_portal.log_progress') }}" 
+                   class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow px-4 py-4 text-center">
+                    <svg class="h-6 w-6 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Log Progress
+                </a>
+                <a href="{{ url_for('client_portal.view_plan') }}"
+                   class="bg-green-600 hover:bg-green-700 text-white rounded-lg shadow px-4 py-4 text-center">
+                    <svg class="h-6 w-6 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    View Plan
+                </a>
+            </div>
+
+            <!-- Progress Overview -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+                <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Recent Progress</h3>
+                </div>
+                <div class="p-5">
+                    {% if progress_logs %}
+                        <div class="space-y-4">
+                            {% for log in progress_logs %}
+                                <div class="border-l-4 {% if log.workout_completed %}border-green-500{% else %}border-yellow-500{% endif %} bg-gray-50 dark:bg-gray-700 p-4">
+                                    <div class="flex justify-between">
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ log.log_date.strftime('%B %d, %Y') }}</p>
+                                        {% if log.workout_completed %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                Workout Complete
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                        {% if log.metrics %}
+                                            <p>Weight: {{ log.metrics.weight }}kg</p>
+                                            {% if log.metrics.body_fat %}
+                                                <p>Body Fat: {{ log.metrics.body_fat }}%</p>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if log.notes %}
+                                            <p class="mt-1">{{ log.notes }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-600 dark:text-gray-400">No progress logs yet. Start tracking your progress!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Goals Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Active Goals</h3>
+                </div>
+                <div class="p-5">
+                    {% if active_goals %}
+                        <div class="space-y-4">
+                            {% for goal in active_goals %}
+                                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                    <h4 class="text-md font-medium text-gray-900 dark:text-white">{{ goal.title }}</h4>
+                                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ goal.description }}</p>
+                                    <div class="mt-2">
+                                        <div class="relative pt-1">
+                                            <div class="flex mb-2 items-center justify-between">
+                                                <div>
+                                                    <span class="text-xs font-semibold inline-block text-indigo-600 dark:text-indigo-400">
+                                                        Progress
+                                                    </span>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="text-xs font-semibold inline-block text-indigo-600 dark:text-indigo-400">
+                                                        {{ goal.progress }}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-indigo-200 dark:bg-indigo-900">
+                                                <div style="width:{{ goal.progress }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-600 dark:text-gray-400">No active goals. Set some goals to track your progress!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Progress Charts
+        const progressData = {{ progress_logs | tojson | safe }};
+        const dates = progressData.map(log => log.log_date);
+        const weights = progressData.map(log => log.metrics.weight);
+        const bodyFats = progressData.map(log => log.metrics.body_fat);
+        const workoutCompletions = progressData.map(log => log.workout_completed ? 1 : 0);
+
+        // Weight Chart
+        const weightCtx = document.getElementById('weightChart').getContext('2d');
+        new Chart(weightCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Weight (kg)',
+                    data: weights,
+                    borderColor: '#4F46E5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: {
+                            color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Body Fat Chart
+        const bodyFatCtx = document.getElementById('bodyFatChart').getContext('2d');
+        new Chart(bodyFatCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Body Fat %',
+                    data: bodyFats,
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: {
+                            color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Workout Completion Chart
+        const workoutCtx = document.getElementById('workoutChart').getContext('2d');
+        new Chart(workoutCtx, {
+            type: 'bar',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Workout Completion',
+                    data: workoutCompletions,
+                    backgroundColor: workoutCompletions.map(completion => 
+                        completion ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)'
+                    ),
+                    borderColor: workoutCompletions.map(completion => 
+                        completion ? 'rgb(16, 185, 129)' : 'rgb(239, 68, 68)'
+                    ),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                return value === 1 ? 'Completed' : 'Missed';
+                            }
+                        },
+                        grid: {
+                            color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

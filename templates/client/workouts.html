@@ -1,0 +1,482 @@
+{% extends "layout.html" %}
+
+{% block title %}Workouts{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Mobile Header -->
+    <div class="lg:hidden mb-6">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Workouts</h1>
+            <button onclick="history.back()" class="text-gray-500 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Desktop Header -->
+    <div class="hidden lg:block mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="history.back()" class="text-gray-500 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Workouts</h1>
+            </div>
+            <button onclick="showGenerateWorkoutModal()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Generate New Workout
+            </button>
+        </div>
+    </div>
+
+    <!-- Workout Stats Overview -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Your Stats</h2>
+        </div>
+        <div class="p-4">
+            <div class="grid grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                        {% if recent_workouts %}
+                            {{ recent_workouts|length }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Recent Workouts</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                        {% if progress_logs %}
+                            {% set completed = progress_logs|selectattr('workout_completed')|list|length %}
+                            {{ completed }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Completed</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{{ client.fitness_level|title }}</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Current Level</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Add Button -->
+    <div class="lg:hidden fixed bottom-4 right-4">
+        <button onclick="showGenerateWorkoutModal()" class="bg-indigo-600 text-white rounded-full p-4 shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Recent Workouts -->
+    <div class="space-y-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Recent Workouts</h2>
+        
+        {% if recent_workouts %}
+            {% for workout in recent_workouts %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ workout.workout_type|title }}</h3>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ workout.date.strftime('%B %d, %Y') }}</span>
+                </div>
+                <div class="p-4">
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div class="text-center">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Duration</div>
+                            <div class="text-base font-medium text-gray-900 dark:text-white">{{ workout.duration }} min</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Intensity</div>
+                            <div class="text-base font-medium text-gray-900 dark:text-white">
+                                {% set progressLog = progress_logs|selectattr('log_date', 'equalto', workout.date)|first %}
+                                {% if progressLog and progressLog.workout_difficulty %}
+                                    {{ progressLog.workout_difficulty }}/10
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Status</div>
+                            <div class="text-base font-medium">
+                                {% set progressLog = progress_logs|selectattr('log_date', 'equalto', workout.date)|first %}
+                                {% if progressLog and progressLog.workout_completed %}
+                                    <span class="text-green-600 dark:text-green-400">Completed</span>
+                                {% else %}
+                                    <span class="text-yellow-600 dark:text-yellow-400">In Progress</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if workout.notes %}
+                    <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        <strong>Notes:</strong> {{ workout.notes }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="flex space-x-2">
+                        {% set progressLog = progress_logs|selectattr('log_date', 'equalto', workout.date)|first %}
+                        {% if not progressLog or not progressLog.workout_completed %}
+                        <button onclick="markWorkoutComplete('{{ workout.id }}')" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Mark Complete
+                        </button>
+                        {% endif %}
+                        <button onclick="logWorkoutProgress('{{ workout.id }}')" class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            Log Progress
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
+                <svg class="h-12 w-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No workouts yet</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by generating your first AI workout plan</p>
+                <div class="mt-4">
+                    <button onclick="showGenerateWorkoutModal()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Generate New Workout
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Generate Workout Modal -->
+<div id="generate-workout-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Generate New Workout</h3>
+            <button onclick="hideGenerateWorkoutModal()" class="text-gray-400 hover:text-gray-500">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 overflow-y-auto">
+            <form id="generate-workout-form" class="space-y-4">
+                <div>
+                    <label for="goal" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fitness Goal</label>
+                    <select id="goal" name="goal" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="weight_loss" {% if client.goal == 'weight_loss' %}selected{% endif %}>Weight Loss</option>
+                        <option value="muscle_gain" {% if client.goal == 'muscle_gain' %}selected{% endif %}>Muscle Gain</option>
+                        <option value="endurance" {% if client.goal == 'endurance' %}selected{% endif %}>Endurance</option>
+                        <option value="strength" {% if client.goal == 'strength' %}selected{% endif %}>Strength</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="training_days" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Training Days Per Week</label>
+                    <select id="training_days" name="training_days" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="2">2 days</option>
+                        <option value="3" selected>3 days</option>
+                        <option value="4">4 days</option>
+                        <option value="5">5 days</option>
+                        <option value="6">6 days</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="duration" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Workout Duration (minutes)</label>
+                    <input type="number" id="duration" name="duration" value="45" min="15" max="120" step="5" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Focus Areas</label>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                        <div class="flex items-center">
+                            <input id="focus_upper_body" name="focus_areas" type="checkbox" value="upper_body" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                            <label for="focus_upper_body" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Upper Body</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input id="focus_lower_body" name="focus_areas" type="checkbox" value="lower_body" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                            <label for="focus_lower_body" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Lower Body</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input id="focus_core" name="focus_areas" type="checkbox" value="core" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                            <label for="focus_core" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Core</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input id="focus_cardio" name="focus_areas" type="checkbox" value="cardio" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                            <label for="focus_cardio" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Cardio</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="injury_considerations" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Injury Considerations</label>
+                    <select id="injury_considerations" name="injury_considerations" multiple class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="knee">Knee Issues</option>
+                        <option value="back">Back Issues</option>
+                        <option value="shoulder">Shoulder Issues</option>
+                        <option value="wrist">Wrist Issues</option>
+                        <option value="ankle">Ankle Issues</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Hold Ctrl/Cmd to select multiple</p>
+                </div>
+                
+                <div class="flex items-center">
+                    <input id="create_plan" name="create_plan" type="checkbox" checked class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                    <label for="create_plan" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Save this plan to my account</label>
+                </div>
+            </form>
+            
+            <div id="workout-loading" class="hidden text-center py-6 space-y-3">
+                <div class="flex justify-center">
+                    <svg class="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Generating your personalized workout plan...</p>
+                <p class="text-xs text-gray-500 dark:text-gray-500">This may take a moment as our AI creates the perfect workout for you</p>
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+            <button id="generate-workout-btn" type="button" onclick="generateWorkout()" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                </svg>
+                Generate Workout Plan
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Log Progress Modal -->
+<div id="log-progress-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Log Workout Progress</h3>
+            <button onclick="hideLogProgressModal()" class="text-gray-400 hover:text-gray-500">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 overflow-y-auto">
+            <form id="log-progress-form" class="space-y-4">
+                <input type="hidden" id="workout_id" name="workout_id">
+                
+                <div class="flex items-center justify-between mb-4">
+                    <label for="workout_completed" class="text-sm font-medium text-gray-700 dark:text-gray-300">Mark workout as completed</label>
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                        <input type="checkbox" id="workout_completed" name="workout_completed" class="checked:bg-indigo-600 outline-none focus:outline-none right-4 checked:right-0 duration-200 ease-in absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked>
+                        <label for="workout_completed" class="block overflow-hidden h-6 rounded-full bg-gray-300 dark:bg-gray-700 cursor-pointer"></label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="workout_difficulty" class="block text-sm font-medium text-gray-700 dark:text-gray-300">How difficult was this workout? (1-10)</label>
+                    <input type="range" id="workout_difficulty" name="workout_difficulty" min="1" max="10" value="5" class="mt-1 block w-full">
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <span>Too Easy</span>
+                        <span id="difficulty_value">5</span>
+                        <span>Very Hard</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="energy_level" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Energy Level</label>
+                    <select id="energy_level" name="energy_level" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="5">Excellent</option>
+                        <option value="4">Good</option>
+                        <option value="3" selected>Average</option>
+                        <option value="2">Poor</option>
+                        <option value="1">Very Poor</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                    <textarea id="notes" name="notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="How did you feel? Any achievements or challenges?"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+            <button type="button" onclick="submitWorkoutProgress()" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Save Progress
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Workout Generator Modal Functions
+function showGenerateWorkoutModal() {
+    document.getElementById('generate-workout-modal').classList.remove('hidden');
+}
+
+function hideGenerateWorkoutModal() {
+    document.getElementById('generate-workout-modal').classList.add('hidden');
+}
+
+// Log Progress Modal Functions
+function logWorkoutProgress(workoutId) {
+    document.getElementById('workout_id').value = workoutId;
+    document.getElementById('log-progress-modal').classList.remove('hidden');
+}
+
+function hideLogProgressModal() {
+    document.getElementById('log-progress-modal').classList.add('hidden');
+}
+
+// Update difficulty slider value display
+document.getElementById('workout_difficulty').addEventListener('input', function() {
+    document.getElementById('difficulty_value').textContent = this.value;
+});
+
+async function generateWorkout() {
+    const form = document.getElementById('generate-workout-form');
+    const formData = new FormData(form);
+    
+    // Show loading state
+    document.getElementById('generate-workout-form').classList.add('hidden');
+    document.getElementById('workout-loading').classList.remove('hidden');
+    document.getElementById('generate-workout-btn').disabled = true;
+    
+    // Get focus areas from checkboxes
+    const focusAreas = [];
+    document.querySelectorAll('input[name="focus_areas"]:checked').forEach(checkbox => {
+        focusAreas.push(checkbox.value);
+    });
+    
+    // Get injury considerations from multi-select
+    const injuryConsiderations = Array.from(
+        document.getElementById('injury_considerations').selectedOptions
+    ).map(option => option.value);
+    
+    const data = {
+        goal: formData.get('goal'),
+        training_days: parseInt(formData.get('training_days')),
+        duration: parseInt(formData.get('duration')),
+        focus_areas: focusAreas,
+        injury_considerations: injuryConsiderations,
+        create_plan: document.getElementById('create_plan').checked
+    };
+    
+    try {
+        const response = await fetch('/api/generate-workout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to generate workout plan');
+        }
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            showToast('Workout plan generated successfully!', 'success');
+            // Redirect to the new workout plan if it was saved
+            if (data.create_plan) {
+                window.location.reload();
+            } else {
+                hideGenerateWorkoutModal();
+            }
+        } else {
+            throw new Error(result.message || 'Unknown error');
+        }
+    } catch (error) {
+        console.error('Error generating workout:', error);
+        showToast('Failed to generate workout plan: ' + error.message, 'error');
+    } finally {
+        // Reset form state
+        document.getElementById('generate-workout-form').classList.remove('hidden');
+        document.getElementById('workout-loading').classList.add('hidden');
+        document.getElementById('generate-workout-btn').disabled = false;
+    }
+}
+
+async function markWorkoutComplete(workoutId) {
+    try {
+        const response = await fetch('/api/workout-complete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                workout_id: workoutId,
+                completed: true
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to mark workout as complete');
+        }
+        
+        showToast('Workout marked as complete!', 'success');
+        window.location.reload();
+    } catch (error) {
+        console.error('Error marking workout complete:', error);
+        showToast('Failed to update workout status', 'error');
+    }
+}
+
+async function submitWorkoutProgress() {
+    const form = document.getElementById('log-progress-form');
+    const formData = new FormData(form);
+    
+    const data = {
+        workout_id: formData.get('workout_id'),
+        workout_completed: formData.get('workout_completed') === 'on',
+        workout_difficulty: parseInt(formData.get('workout_difficulty')),
+        energy_level: parseInt(formData.get('energy_level')),
+        notes: formData.get('notes')
+    };
+    
+    try {
+        const response = await fetch('/api/log-workout-progress', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to log workout progress');
+        }
+        
+        showToast('Progress logged successfully!', 'success');
+        hideLogProgressModal();
+        window.location.reload();
+    } catch (error) {
+        console.error('Error logging progress:', error);
+        showToast('Failed to log workout progress', 'error');
+    }
+}
+</script>
+{% endblock %} 

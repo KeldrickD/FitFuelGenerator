@@ -1,0 +1,196 @@
+{% extends "layout.html" %}
+
+{% block title %}Progress{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Mobile Header -->
+    <div class="lg:hidden mb-6">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Progress Tracking</h1>
+            <button onclick="history.back()" class="text-gray-500 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Progress Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- Weight Progress -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Weight Progress</h2>
+            <div class="h-64">
+                <canvas id="weightChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Body Measurements -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Body Measurements</h2>
+            <div class="h-64">
+                <canvas id="measurementsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Photos -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Progress Photos</h2>
+        </div>
+        <div class="p-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {% for photo in progress_photos %}
+                <div class="relative aspect-square">
+                    <img src="{{ photo.url }}" alt="Progress photo from {{ photo.date }}" 
+                         class="absolute inset-0 w-full h-full object-cover rounded-lg">
+                    <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 rounded-b-lg">
+                        {{ photo.date }}
+                    </div>
+                </div>
+                {% endfor %}
+                <div class="relative aspect-square border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400"
+                     onclick="document.getElementById('photo-upload').click()">
+                    <input type="file" id="photo-upload" class="hidden" accept="image/*" capture="environment">
+                    <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goals Progress -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Goals Progress</h2>
+        </div>
+        <div class="p-4">
+            <div class="space-y-4">
+                {% for goal in goals %}
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ goal.name }}</span>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ goal.progress }}%</span>
+                    </div>
+                    <div class="overflow-hidden h-2 rounded bg-gray-200 dark:bg-gray-700">
+                        <div class="h-2 rounded bg-indigo-600 transition-all duration-500" style="width: {{ goal.progress }}%"></div>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ goal.description }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Weight Progress Chart
+    const weightCtx = document.getElementById('weightChart').getContext('2d');
+    new Chart(weightCtx, {
+        type: 'line',
+        data: {
+            labels: {{ weight_dates|tojson }},
+            datasets: [{
+                label: 'Weight (kg)',
+                data: {{ weight_data|tojson }},
+                borderColor: '#4f46e5',
+                tension: 0.3,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        color: 'rgba(156, 163, 175, 0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // Body Measurements Chart
+    const measurementsCtx = document.getElementById('measurementsChart').getContext('2d');
+    new Chart(measurementsCtx, {
+        type: 'radar',
+        data: {
+            labels: ['Chest', 'Waist', 'Hips', 'Arms', 'Thighs'],
+            datasets: [{
+                label: 'Current',
+                data: {{ current_measurements|tojson }},
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79, 70, 229, 0.2)'
+            }, {
+                label: 'Starting',
+                data: {{ starting_measurements|tojson }},
+                borderColor: '#9ca3af',
+                backgroundColor: 'rgba(156, 163, 175, 0.2)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: {
+                        color: 'rgba(156, 163, 175, 0.2)'
+                    },
+                    grid: {
+                        color: 'rgba(156, 163, 175, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+});
+
+// Photo upload handling
+document.getElementById('photo-upload').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    try {
+        showLoading();
+        const response = await fetch('/api/progress-photos', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            showToast('Photo uploaded successfully', 'success');
+            location.reload();
+        } else {
+            throw new Error('Failed to upload photo');
+        }
+    } catch (error) {
+        console.error('Error uploading photo:', error);
+        showToast('Failed to upload photo', 'error');
+    } finally {
+        hideLoading();
+    }
+});
+</script>
+{% endblock %} 

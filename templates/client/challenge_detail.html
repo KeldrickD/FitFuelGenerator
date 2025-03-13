@@ -1,0 +1,462 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ challenge.title }} - Challenge{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Mobile Header -->
+    <div class="lg:hidden mb-6">
+        <div class="flex items-center justify-between">
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white truncate">{{ challenge.title }}</h1>
+            <button onclick="history.back()" class="text-gray-500 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Desktop Header -->
+    <div class="hidden lg:block mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button onclick="history.back()" class="text-gray-500 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ challenge.title }}</h1>
+            </div>
+            <div class="flex space-x-2">
+                {% if not participation and is_active %}
+                <button onclick="joinChallenge({{ challenge.id }})" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Join Challenge
+                </button>
+                {% endif %}
+                <button onclick="window.location.href='/challenges'" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg class="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    All Challenges
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Challenge Info -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                        {% if challenge.category == 'workout' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
+                        {% elif challenge.category == 'nutrition' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                        {% else %}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300{% endif %} mr-2">
+                        {{ challenge.category|capitalize }}
+                    </span>
+                    
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                        {% if is_active %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
+                        {% elif is_upcoming %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
+                        {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300{% endif %}">
+                        {{ 'Active' if is_active else 'Upcoming' if is_upcoming else 'Completed' }}
+                    </span>
+                    
+                    {% if participation %}
+                    <div class="ml-auto flex items-center">
+                        <div class="text-sm font-medium text-indigo-600 dark:text-indigo-400 mr-2">{{ participation.progress_percentage }}%</div>
+                        <div class="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            <div class="bg-indigo-600 dark:bg-indigo-500 h-2.5 rounded-full" style="width: {{ participation.progress_percentage }}%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <p class="mt-4 text-sm text-gray-600 dark:text-gray-400">{{ challenge.description }}</p>
+                
+                <div class="mt-6 grid grid-cols-3 gap-4 text-center">
+                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Starts</div>
+                        <div class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ challenge.start_date.strftime('%b %d, %Y') }}</div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Ends</div>
+                        <div class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ challenge.end_date.strftime('%b %d, %Y') }}</div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Duration</div>
+                        <div class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ (challenge.end_date - challenge.start_date).days }} days</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Challenge Goals -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Challenge Goals</h2>
+                
+                <div class="space-y-4">
+                    {% for goal in goals %}
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                {% if goal.id in goal_completions %}
+                                <div class="flex items-center justify-center h-8 w-8 rounded-full bg-green-100 dark:bg-green-900">
+                                    <svg class="h-5 w-5 text-green-600 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                                {% else %}
+                                <div class="flex items-center justify-center h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-600">
+                                    <div class="h-3 w-3 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <p class="text-sm font-medium 
+                                    {% if goal.id in goal_completions %}text-green-600 dark:text-green-400{% else %}text-gray-900 dark:text-white{% endif %}">
+                                    {{ goal.description }}
+                                </p>
+                                {% if goal.type == 'workout' %}
+                                <p class="mt-1 text-xs text-blue-600 dark:text-blue-400">Workout Goal</p>
+                                {% elif goal.type == 'nutrition' %}
+                                <p class="mt-1 text-xs text-green-600 dark:text-green-400">Nutrition Goal</p>
+                                {% endif %}
+                                
+                                {% if goal.id in goal_completions %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    Completed on {{ goal_completions[goal.id].completion_date.strftime('%b %d, %Y') }}
+                                </p>
+                                {% elif participation and is_active %}
+                                <button onclick="completeGoal({{ goal.id }})" class="mt-2 inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 dark:text-indigo-200 dark:bg-indigo-900 dark:hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Mark as Complete
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Related Content -->
+            {% if related_workouts or related_recipes %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Challenge Resources</h2>
+                
+                {% if related_workouts %}
+                <div class="mb-6">
+                    <h3 class="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">Workouts</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for workout in related_workouts %}
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ workout.name }}</h4>
+                            <div class="mt-2 flex justify-between">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                    {{ workout.type }}
+                                </span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                    {{ workout.estimated_duration }} min
+                                </span>
+                            </div>
+                            <div class="mt-3">
+                                <a href="/workout/{{ workout.id }}" class="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium">
+                                    View Workout →
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if related_recipes %}
+                <div>
+                    <h3 class="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">Recipes</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for recipe in related_recipes %}
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ recipe.name }}</h4>
+                            <div class="mt-2 flex justify-between">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                                    {{ recipe.category }}
+                                </span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                    {{ recipe.calories }} cal | {{ recipe.protein }}g protein
+                                </span>
+                            </div>
+                            <div class="mt-3">
+                                <a href="/recipe/{{ recipe.id }}" class="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium">
+                                    View Recipe →
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Participant Info -->
+            {% if participation %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Your Progress</h2>
+                
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Progress</div>
+                        <div class="text-sm font-medium text-indigo-600 dark:text-indigo-400">{{ participation.progress_percentage }}%</div>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                        <div class="bg-indigo-600 dark:bg-indigo-500 h-2.5 rounded-full" style="width: {{ participation.progress_percentage }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 text-center">
+                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Goals Completed</div>
+                        <div class="mt-1 text-lg font-medium text-gray-900 dark:text-white">{{ participation.completed_goals }} / {{ participation.total_goals }}</div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Joined On</div>
+                        <div class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ participation.joined_date.strftime('%b %d, %Y') }}</div>
+                    </div>
+                </div>
+                
+                {% if is_completed and participation.progress_percentage >= 80 %}
+                <div class="mt-4 bg-green-50 dark:bg-green-900 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                    <div class="flex">
+                        <svg class="h-5 w-5 text-green-500 dark:text-green-400 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <div class="text-sm font-medium text-green-800 dark:text-green-300">Challenge Completed!</div>
+                            <div class="mt-1 text-xs text-green-700 dark:text-green-400">Congratulations on successfully completing this challenge.</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Share Progress -->
+                <div class="mt-4">
+                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Share Your Progress</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="shareOnFacebook()" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z" />
+                            </svg>
+                            Facebook
+                        </button>
+                        <button onclick="shareOnTwitter()" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-sky-500 hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-400">
+                            <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723 10.016 10.016 0 01-3.127 1.195 4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.937 4.937 0 004.604 3.417 9.868 9.868 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.054 0 13.999-7.496 13.999-13.986 0-.209 0-.42-.015-.63a9.936 9.936 0 002.46-2.548l-.047-.02z" />
+                            </svg>
+                            Twitter
+                        </button>
+                        <button onclick="shareViaLink()" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            Copy Link
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Share Progress Image -->
+                <div class="mt-4">
+                    <button onclick="generateShareImage()" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Generate Shareable Image
+                    </button>
+                </div>
+            </div>
+            {% elif is_active %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <div class="text-center">
+                    <svg class="h-12 w-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Not participating yet</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Join this challenge to track your progress and compete with others.</p>
+                    <div class="mt-4">
+                        <button onclick="joinChallenge({{ challenge.id }})" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Join Challenge
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Leaderboard -->
+            {% if participants|length > 0 %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Leaderboard</h2>
+                
+                <div class="space-y-3">
+                    {% for user in leaderboard %}
+                    <div class="flex items-center p-2 {% if user.is_current_user %}bg-indigo-50 dark:bg-indigo-900{% else %}hover:bg-gray-50 dark:hover:bg-gray-700{% endif %} rounded-lg">
+                        <div class="flex-shrink-0 mr-2 text-gray-500 dark:text-gray-400 w-6 text-center">
+                            {{ loop.index }}
+                        </div>
+                        <img class="h-8 w-8 rounded-full" src="{{ user.avatar_url }}" alt="{{ user.name }}">
+                        <div class="ml-3 flex-1">
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                {{ user.name }} {% if user.is_current_user %}<span class="text-xs text-gray-500 dark:text-gray-400">(You)</span>{% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <div class="text-right text-sm font-medium 
+                                {% if user.progress >= 80 %}text-green-600 dark:text-green-400
+                                {% elif user.progress >= 40 %}text-indigo-600 dark:text-indigo-400
+                                {% else %}text-gray-500 dark:text-gray-400{% endif %}">
+                                {{ user.progress }}%
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Mobile Action Buttons -->
+    <div class="fixed bottom-4 right-4 lg:hidden">
+        {% if not participation and is_active %}
+        <button onclick="joinChallenge({{ challenge.id }})" class="flex items-center justify-center rounded-full h-14 w-14 bg-indigo-600 text-white shadow-lg">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function joinChallenge(challengeId) {
+        fetch(`/api/challenges/join`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ challenge_id: challengeId }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Successfully joined the challenge!');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to join challenge. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again later.');
+        });
+    }
+    
+    function completeGoal(goalId) {
+        fetch(`/api/challenges/complete-goal`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ goal_id: goalId }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Goal marked as complete!');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to mark goal as complete. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again later.');
+        });
+    }
+    
+    // Social media sharing functions
+    function shareOnFacebook() {
+        const url = encodeURIComponent(window.location.href);
+        const title = encodeURIComponent("Check out my progress on {{ challenge.title }}!");
+        const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${title}`;
+        window.open(shareUrl, '_blank', 'width=600,height=400');
+    }
+    
+    function shareOnTwitter() {
+        {% if participation %}
+        const progressText = "I'm {{ participation.progress_percentage }}% through";
+        {% else %}
+        const progressText = "I've joined";
+        {% endif %}
+        
+        const text = encodeURIComponent(`${progressText} the "${challenge.title}" challenge on FitFuelGenerator! #fitness #nutrition #challenge`);
+        const url = encodeURIComponent(window.location.href);
+        const shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+        window.open(shareUrl, '_blank', 'width=600,height=400');
+    }
+    
+    function shareViaLink() {
+        const url = window.location.href;
+        
+        // Create a temporary input element
+        const tempInput = document.createElement('input');
+        tempInput.style.position = 'absolute';
+        tempInput.style.left = '-1000px';
+        tempInput.value = url;
+        document.body.appendChild(tempInput);
+        
+        // Select and copy the link
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        
+        // Show confirmation
+        alert('Link copied to clipboard!');
+    }
+    
+    function generateShareImage() {
+        // Call the backend API to generate a sharable image
+        fetch(`/api/challenges/share-image/${challenge.id}`, {
+            method: 'GET'
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.blob();
+            }
+            throw new Error('Failed to generate image');
+        })
+        .then(blob => {
+            // Create a download link for the image
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'challenge-progress.png';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while generating the image. Please try again later.');
+        });
+    }
+</script>
+{% endblock %} 

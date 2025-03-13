@@ -1,0 +1,262 @@
+{% extends "layout.html" %}
+
+{% block title %}Sharing Analytics{% endblock %}
+
+{% block content %}
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+    <h1 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Social Media Sharing Analytics</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Key Metrics -->
+        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <div class="text-lg font-medium text-gray-800 dark:text-gray-200">Total Shares</div>
+            <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ analytics.total_shares }}</div>
+        </div>
+        
+        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <div class="text-lg font-medium text-gray-800 dark:text-gray-200">Sharing Clients</div>
+            <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ analytics.unique_clients }}</div>
+        </div>
+        
+        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <div class="text-lg font-medium text-gray-800 dark:text-gray-200">Popular Platform</div>
+            <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ analytics.most_popular_platform }}</div>
+        </div>
+        
+        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <div class="text-lg font-medium text-gray-800 dark:text-gray-200">Most Shared</div>
+            <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ analytics.most_shared_content }}</div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Distribution by Platform -->
+        <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white">Distribution by Platform</h2>
+            </div>
+            <div class="p-6">
+                <div class="h-64">
+                    <canvas id="platformChart"></canvas>
+                </div>
+                <div class="mt-6 space-y-2">
+                    {% for stat in platform_stats %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full mr-2 platform-color" data-platform="{{ stat.platform.lower() }}"></div>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ stat.platform }}</span>
+                        </div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">{{ stat.count }} ({{ stat.percentage }}%)</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Distribution by Content Type -->
+        <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white">Distribution by Content Type</h2>
+            </div>
+            <div class="p-6">
+                <div class="h-64">
+                    <canvas id="contentChart"></canvas>
+                </div>
+                <div class="mt-6 space-y-2">
+                    {% for stat in content_stats %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full mr-2 content-color" data-content="{{ loop.index0 }}"></div>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ stat.type }}</span>
+                        </div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">{{ stat.count }} ({{ stat.percentage }}%)</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+        <!-- Recent Sharing Activity -->
+        <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white">Recent Sharing Activity</h2>
+            </div>
+            <div class="px-6 py-4">
+                <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for share in recent_shares %}
+                    <li class="py-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ share.client_name }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    Shared {{ share.content_type }} on {{ share.platform }}
+                                </p>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400" title="{{ share.timestamp }}">
+                                {{ share.time_ago }}
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if not recent_shares %}
+                    <li class="py-6 text-center">
+                        <p class="text-gray-500 dark:text-gray-400">No sharing activity yet</p>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Top Sharing Clients -->
+        <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white">Top Sharing Clients</h2>
+            </div>
+            <div class="px-6 py-4">
+                <div class="space-y-5">
+                    {% for client in client_shares %}
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <a href="{{ url_for('trainer.client_profile', client_id=client.client_id) }}" class="text-sm font-medium text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400">
+                                {{ client.client_name }}
+                            </a>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ client.share_count }} shares</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            <div class="bg-indigo-600 dark:bg-indigo-500 h-2.5 rounded-full" style="width: {{ client.percentage }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not client_shares %}
+                    <div class="py-6 text-center">
+                        <p class="text-gray-500 dark:text-gray-400">No client sharing data available</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-8 bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Pro Tip</h3>
+                <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                    <p>
+                        Encourage clients to share their achievements more frequently by:
+                        <ul class="list-disc list-inside mt-1">
+                            <li>Creating more challenges with shareable milestones</li>
+                            <li>Designing workout plans with achievable goals</li>
+                            <li>Highlighting the most shareable content types in your programs</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Platform chart
+    const platformData = {{ platform_stats|tojson }};
+    const platformLabels = platformData.map(item => item.platform);
+    const platformCounts = platformData.map(item => item.count);
+    
+    // Platform colors
+    const platformColors = {
+        'facebook': '#4267B2',
+        'twitter': '#1DA1F2',
+        'linkedin': '#0A66C2',
+        'pinterest': '#E60023',
+        'copy_link': '#6B7280',
+        'image': '#10B981',
+        'instagram': '#E1306C'
+    };
+    
+    // Set colors for platform indicators
+    document.querySelectorAll('.platform-color').forEach(el => {
+        const platform = el.dataset.platform.toLowerCase();
+        el.style.backgroundColor = platformColors[platform] || '#6B7280';
+    });
+    
+    const platformChart = new Chart(
+        document.getElementById('platformChart'),
+        {
+            type: 'doughnut',
+            data: {
+                labels: platformLabels,
+                datasets: [{
+                    data: platformCounts,
+                    backgroundColor: platformLabels.map(platform => platformColors[platform.toLowerCase()] || '#6B7280'),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                cutout: '70%'
+            }
+        }
+    );
+    
+    // Content type chart
+    const contentData = {{ content_stats|tojson }};
+    const contentLabels = contentData.map(item => item.type);
+    const contentCounts = contentData.map(item => item.count);
+    
+    // Content colors - using a color scale
+    const contentColors = [
+        '#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#6366F1'
+    ];
+    
+    // Set colors for content type indicators
+    document.querySelectorAll('.content-color').forEach(el => {
+        const index = parseInt(el.dataset.content);
+        el.style.backgroundColor = contentColors[index % contentColors.length];
+    });
+    
+    const contentChart = new Chart(
+        document.getElementById('contentChart'),
+        {
+            type: 'doughnut',
+            data: {
+                labels: contentLabels,
+                datasets: [{
+                    data: contentCounts,
+                    backgroundColor: contentLabels.map((_, i) => contentColors[i % contentColors.length]),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                cutout: '70%'
+            }
+        }
+    );
+});
+</script>
+{% endblock %} 

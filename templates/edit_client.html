@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit {{ client.name }} - FitFuel{% endblock %}
+
+{% block content %}
+<div class="min-h-full">
+    <header class="bg-white shadow">
+        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold tracking-tight text-gray-900">Edit Client</h1>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl md:col-span-2">
+            <form method="post" class="px-4 py-6 sm:p-8">
+                <div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <div class="sm:col-span-4">
+                        <label for="name" class="block text-sm font-medium leading-6 text-gray-900">Full name</label>
+                        <div class="mt-2">
+                            <input type="text" name="name" id="name" value="{{ client.name }}" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-4">
+                        <label for="email" class="block text-sm font-medium leading-6 text-gray-900">Email address</label>
+                        <div class="mt-2">
+                            <input type="email" name="email" id="email" value="{{ client.email }}" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-3">
+                        <label for="fitness_level" class="block text-sm font-medium leading-6 text-gray-900">Fitness Level</label>
+                        <div class="mt-2">
+                            <select id="fitness_level" name="fitness_level" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                                <option value="beginner" {% if client.fitness_level == 'beginner' %}selected{% endif %}>Beginner</option>
+                                <option value="intermediate" {% if client.fitness_level == 'intermediate' %}selected{% endif %}>Intermediate</option>
+                                <option value="advanced" {% if client.fitness_level == 'advanced' %}selected{% endif %}>Advanced</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-3">
+                        <label for="goal" class="block text-sm font-medium leading-6 text-gray-900">Primary Goal</label>
+                        <div class="mt-2">
+                            <select id="goal" name="goal" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                                <option value="weight_loss" {% if client.goal == 'weight_loss' %}selected{% endif %}>Weight Loss</option>
+                                <option value="muscle_gain" {% if client.goal == 'muscle_gain' %}selected{% endif %}>Muscle Gain</option>
+                                <option value="endurance" {% if client.goal == 'endurance' %}selected{% endif %}>Endurance</option>
+                                <option value="strength" {% if client.goal == 'strength' %}selected{% endif %}>Strength</option>
+                                <option value="flexibility" {% if client.goal == 'flexibility' %}selected{% endif %}>Flexibility</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-3">
+                        <label for="diet_preference" class="block text-sm font-medium leading-6 text-gray-900">Diet Preference</label>
+                        <div class="mt-2">
+                            <select id="diet_preference" name="diet_preference" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                                <option value="no_preference" {% if client.diet_preference == 'no_preference' %}selected{% endif %}>No Preference</option>
+                                <option value="vegetarian" {% if client.diet_preference == 'vegetarian' %}selected{% endif %}>Vegetarian</option>
+                                <option value="vegan" {% if client.diet_preference == 'vegan' %}selected{% endif %}>Vegan</option>
+                                <option value="keto" {% if client.diet_preference == 'keto' %}selected{% endif %}>Keto</option>
+                                <option value="paleo" {% if client.diet_preference == 'paleo' %}selected{% endif %}>Paleo</option>
+                                <option value="mediterranean" {% if client.diet_preference == 'mediterranean' %}selected{% endif %}>Mediterranean</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-span-full">
+                        <label for="allergies" class="block text-sm font-medium leading-6 text-gray-900">Allergies/Restrictions</label>
+                        <div class="mt-2">
+                            <input type="text" name="allergies" id="allergies" value="{{ client.allergies|join(', ') }}" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Enter allergies separated by commas">
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">Separate multiple allergies with commas</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex items-center justify-end gap-x-6">
+                    <a href="{{ url_for('view_client', client_id=client.id) }}" class="text-sm font-semibold leading-6 text-gray-900">Cancel</a>
+                    <button type="submit" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+{% endblock %} 

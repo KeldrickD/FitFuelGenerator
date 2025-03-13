@@ -1,68 +1,273 @@
 {% extends "layout.html" %}
 
+{% block title %}Clients - FitFuel{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h2 class="card-title mb-0">Your Clients</h2>
-                    <a href="{{ url_for('create_plan') }}" class="btn btn-primary">
-                        <i data-feather="user-plus" class="me-2"></i>Add New Client
-                    </a>
+<div class="min-h-full">
+    <header class="bg-white shadow">
+        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <div class="lg:flex lg:items-center lg:justify-between">
+                <div class="min-w-0 flex-1">
+                    <h2 class="text-3xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">Clients</h2>
+                    <div class="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
+                        <div class="mt-2 flex items-center text-sm text-gray-500">
+                            <i data-feather="users" class="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400"></i>
+                            {{ clients|length }} Total Clients
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    {% if clients %}
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Goal</th>
-                                        <th>Fitness Level</th>
-                                        <th>Diet</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for client in clients %}
-                                    <tr>
-                                        <td>{{ client.name }}</td>
-                                        <td>{{ client.goal|replace('_', ' ')|title }}</td>
-                                        <td>{{ client.fitness_level|title }}</td>
-                                        <td>{{ client.diet_preference|replace('_', ' ')|title }}</td>
-                                        <td>
-                                            <div class="btn-group">
-                                                <a href="{{ url_for('view_progress', client_id=client.id) }}" 
-                                                   class="btn btn-sm btn-primary">
-                                                    <i data-feather="activity" class="feather-small me-1"></i>
-                                                    Progress
-                                                </a>
-                                                <a href="{{ url_for('view_achievements', client_id=client.id) }}"
-                                                   class="btn btn-sm btn-info">
-                                                    <i data-feather="award" class="feather-small me-1"></i>
-                                                    Achievements
-                                                </a>
+                <div class="mt-5 flex lg:ml-4 lg:mt-0">
+                    <span class="sm:ml-3">
+                        <a href="{{ url_for('add_client') }}" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                            <i data-feather="user-plus" class="mr-2 -ml-0.5 h-5 w-5"></i>
+                            Add Client
+                        </a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <!-- Search and Filter Section -->
+        <div class="mb-6 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+            <div class="sm:col-span-3">
+                <label for="search" class="sr-only">Search clients</label>
+                <div class="relative">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i data-feather="search" class="h-5 w-5 text-gray-400"></i>
+                    </div>
+                    <input type="text" name="search" id="search" class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 dark:bg-gray-700 dark:text-white dark:ring-gray-600" placeholder="Search clients...">
+                </div>
+            </div>
+            <div class="sm:col-span-1">
+                <select id="filter-goal" name="filter-goal" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 dark:bg-gray-700 dark:text-white dark:ring-gray-600">
+                    <option value="">All Goals</option>
+                    <option value="weight_loss">Weight Loss</option>
+                    <option value="muscle_gain">Muscle Gain</option>
+                    <option value="endurance">Endurance</option>
+                    <option value="strength">Strength</option>
+                    <option value="flexibility">Flexibility</option>
+                </select>
+            </div>
+            <div class="sm:col-span-1">
+                <select id="filter-level" name="filter-level" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 dark:bg-gray-700 dark:text-white dark:ring-gray-600">
+                    <option value="">All Levels</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                </select>
+            </div>
+            <div class="sm:col-span-1">
+                <select id="filter-diet" name="filter-diet" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 dark:bg-gray-700 dark:text-white dark:ring-gray-600">
+                    <option value="">All Diets</option>
+                    <option value="no_preference">No Preference</option>
+                    <option value="vegetarian">Vegetarian</option>
+                    <option value="vegan">Vegan</option>
+                    <option value="keto">Keto</option>
+                    <option value="paleo">Paleo</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Results Count -->
+        <div id="results-count" class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+            Showing <span id="visible-count">0</span> of <span id="total-count">0</span> clients
+        </div>
+
+        <!-- Clients Table -->
+        <div class="mt-8 flow-root">
+            <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                    <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-300">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Name</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Goal</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fitness Level</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Diet</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                                    <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                                        <span class="sr-only">Actions</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                {% for client in clients %}
+                                <tr>
+                                    <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 flex-shrink-0">
+                                                <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-500">
+                                                    <span class="font-medium leading-none text-white">{{ client.name[:2].upper() }}</span>
+                                                </span>
                                             </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                                            <div class="ml-4">
+                                                <div class="font-medium text-gray-900">{{ client.name }}</div>
+                                                <div class="text-gray-500">{{ client.email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ client.goal|replace('_', ' ')|title }}</td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ client.fitness_level|title }}</td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ client.diet_preference|replace('_', ' ')|title }}</td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <span class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Active</span>
+                                    </td>
+                                    <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                        <div class="flex justify-end gap-2">
+                                            <a href="{{ url_for('view_client', client_id=client.id) }}" class="text-indigo-600 hover:text-indigo-900">
+                                                <i data-feather="eye" class="h-5 w-5"></i>
+                                            </a>
+                                            <a href="{{ url_for('edit_client', client_id=client.id) }}" class="text-indigo-600 hover:text-indigo-900">
+                                                <i data-feather="edit-2" class="h-5 w-5"></i>
+                                            </a>
+                                            <button type="button" 
+                                                class="text-indigo-600 hover:text-indigo-900" 
+                                                onclick="showQuickActions('{{ client.id }}')">
+                                                <i data-feather="more-vertical" class="h-5 w-5"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Quick Actions Modal -->
+<div id="quickActionsModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity">
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                        <h3 class="text-base font-semibold leading-6 text-gray-900">Quick Actions</h3>
+                        <div class="mt-2">
+                            <div class="grid grid-cols-2 gap-4">
+                                <button type="button" class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                                    <i data-feather="user" class="mr-2 h-5 w-5"></i>
+                                    View Profile
+                                </button>
+                                <button type="button" class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                                    <i data-feather="clipboard" class="mr-2 h-5 w-5"></i>
+                                    Create Plan
+                                </button>
+                                <button type="button" class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                                    <i data-feather="trending-up" class="mr-2 h-5 w-5"></i>
+                                    Log Progress
+                                </button>
+                                <button type="button" class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                                    <i data-feather="message-square" class="mr-2 h-5 w-5"></i>
+                                    Message
+                                </button>
+                            </div>
                         </div>
-                    {% else %}
-                        <div class="text-center py-5">
-                            <i data-feather="users" class="mb-3" style="width: 48px; height: 48px; opacity: 0.5;"></i>
-                            <h3 class="h4 mb-3">No Clients Yet</h3>
-                            <p class="text-muted mb-4">Start by creating a new plan for your first client.</p>
-                            <a href="{{ url_for('create_plan') }}" class="btn btn-primary">
-                                <i data-feather="plus-circle" class="me-2"></i>Create First Plan
-                            </a>
-                        </div>
-                    {% endif %}
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto" onclick="hideQuickActions()">
+                        Close
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+{% block scripts %}
+<script>
+const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search');
+    const filterGoal = document.getElementById('filter-goal');
+    const filterLevel = document.getElementById('filter-level');
+    const filterDiet = document.getElementById('filter-diet');
+    const tableRows = document.querySelectorAll('tbody tr');
+    const visibleCount = document.getElementById('visible-count');
+    const totalCount = document.getElementById('total-count');
+
+    // Set initial counts
+    totalCount.textContent = tableRows.length;
+    updateVisibleCount();
+
+    function updateVisibleCount() {
+        const visibleRows = Array.from(tableRows).filter(row => row.style.display !== 'none');
+        visibleCount.textContent = visibleRows.length;
+    }
+
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const goalFilter = filterGoal.value.toLowerCase();
+        const levelFilter = filterLevel.value.toLowerCase();
+        const dietFilter = filterDiet.value.toLowerCase();
+
+        tableRows.forEach(row => {
+            const name = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+            const email = row.querySelector('td:nth-child(1) .text-gray-500').textContent.toLowerCase();
+            const goal = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            const level = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+            const diet = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+
+            const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm);
+            const matchesGoal = !goalFilter || goal.includes(goalFilter);
+            const matchesLevel = !levelFilter || level.includes(levelFilter);
+            const matchesDiet = !dietFilter || diet.includes(dietFilter);
+
+            row.style.display = (matchesSearch && matchesGoal && matchesLevel && matchesDiet) ? '' : 'none';
+        });
+
+        updateVisibleCount();
+    }
+
+    // Add event listeners with debounce for search
+    searchInput.addEventListener('input', debounce(() => filterTable(), 300));
+    filterGoal.addEventListener('change', filterTable);
+    filterLevel.addEventListener('change', filterTable);
+    filterDiet.addEventListener('change', filterTable);
+
+    // Quick Actions Modal
+    window.showQuickActions = function(clientId) {
+        const modal = document.getElementById('quickActionsModal');
+        modal.classList.remove('hidden');
+        modal.setAttribute('data-client-id', clientId);
+    }
+
+    window.hideQuickActions = function() {
+        const modal = document.getElementById('quickActionsModal');
+        modal.classList.add('hidden');
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(event) {
+        const modal = document.getElementById('quickActionsModal');
+        if (event.target === modal) {
+            hideQuickActions();
+        }
+    });
+
+    // Initialize Feather icons if available
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}

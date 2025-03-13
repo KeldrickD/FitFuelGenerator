@@ -1,146 +1,300 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitFuel - Power Client Wins</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
-    {% block head %}{% endblock %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}FitFuelGenerator{% endblock %} - Your Fitness and Nutrition Partner</title>
+    
+    <!-- OpenGraph Meta Tags for Better Social Sharing -->
+    <meta property="og:site_name" content="FitFuelGenerator">
+    <meta property="og:title" content="{% block og_title %}FitFuelGenerator - Your Fitness and Nutrition Partner{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Personalized workout plans, nutrition guidance, and progress tracking for your fitness journey.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='images/fitfuel_social_preview.jpg', _external=True) }}{% endblock %}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{{ request.url }}">
+    
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}FitFuelGenerator - Your Fitness and Nutrition Partner{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Personalized workout plans, nutrition guidance, and progress tracking for your fitness journey.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='images/fitfuel_social_preview.jpg', _external=True) }}{% endblock %}">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="description" content="Your personal fitness tracking companion">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="FitFuel">
+    
+    <!-- PWA Icons -->
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/icon-32x32.png">
+    
+    <!-- Styles -->
+    <link href="/static/css/tailwind.css" rel="stylesheet">
+    
+    <!-- Prevent Flash of Wrong Theme -->
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg sticky-top">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}" data-tutorial="brand">
-                <svg class="me-2" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M6 4h12l3 4-9 13L3 8z" stroke-width="2"/>
-                    <path d="M12 21V8" stroke-width="2"/>
-                    <path d="M9 8l3-4 3 4" stroke-width="2"/>
-                </svg>
-                FitFuel
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}" data-tutorial="home">
-                            <i data-feather="home" class="me-2"></i>Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('fitness_quiz') }}" data-tutorial="fitness-quiz">
-                            <i data-feather="clipboard" class="me-2"></i>Fitness Quiz
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('resource_library') }}" data-tutorial="resources">
-                            <i data-feather="book-open" class="me-2"></i>Resource Library
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('challenges') }}" data-tutorial="challenges">
-                            <i data-feather="award" class="me-2"></i>Challenges
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}" data-tutorial="dashboard">
-                            <i data-feather="grid" class="me-2"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('create_plan') }}" data-tutorial="create-plan">
-                            <i data-feather="plus-circle" class="me-2"></i>Create Plan
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('clients_list') }}" data-tutorial="clients">
-                            <i data-feather="users" class="me-2"></i>Clients
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('meal_substitutions') }}" data-tutorial="meal-subs">
-                            <i data-feather="refresh-cw" class="me-2"></i>Meal Substitutions
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('meal_planner_wizard') }}" data-tutorial="meal-planner">
-                            <i data-feather="calendar" class="me-2"></i>Meal Planner
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <main class="container my-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show rounded-xl shadow-soft">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="footer">
-        <div class="container text-center">
-            <div class="row">
-                <div class="col-md-12">
-                    <svg class="mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" opacity="0.5">
-                        <path d="M6 4h12l3 4-9 13L3 8z" stroke-width="2"/>
-                        <path d="M12 21V8" stroke-width="2"/>
-                        <path d="M9 8l3-4 3 4" stroke-width="2"/>
-                    </svg>
-                    <p class="text-muted mb-0">© 2024 FitFuel. Power Client Wins with Workouts + Meals</p>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Tutorial Overlay Container -->
-    <div id="tutorialOverlay" class="tutorial-overlay d-none"></div>
-    <div id="tutorialTooltip" class="tutorial-tooltip d-none">
-        <div class="tutorial-content">
-            <h5 class="tutorial-title"></h5>
-            <p class="tutorial-description"></p>
-            <div class="tutorial-controls">
-                <button class="btn btn-sm btn-secondary" id="skipTutorial">Skip Tutorial</button>
-                <div class="tutorial-navigation">
-                    <button class="btn btn-sm btn-primary" id="prevStep">Previous</button>
-                    <button class="btn btn-sm btn-primary" id="nextStep">Next</button>
-                </div>
-            </div>
-        </div>
+<body class="h-full bg-gray-100 dark:bg-gray-900">
+    {# Loading Overlay #}
+    <div id="loading-overlay" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-indigo-500"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/tutorial.js') }}"></script>
-    {% block scripts %}{% endblock %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                // Initialize Feather icons
-                feather.replace();
+    {# Notification Center #}
+    <div id="notification-center" class="fixed right-4 top-4 z-50 space-y-4">
+        {# Notifications will be inserted here #}
+    </div>
 
-                // Initialize tutorial if it's a new user
-                if (!localStorage.getItem('tutorialCompleted')) {
-                    initTutorial();
-                }
-            } catch (error) {
-                console.error('Error initializing application:', error);
-            }
+    {% if current_user.is_authenticated %}
+    <div class="min-h-full">
+        <nav class="bg-white shadow-sm dark:bg-gray-800">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 justify-between">
+                    <div class="flex">
+                        <div class="flex flex-shrink-0 items-center">
+                            <a href="{{ url_for('index') }}" class="flex items-center">
+                                <svg class="h-8 w-8 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M6 4h12l3 4-9 13L3 8z" stroke-width="2"/>
+                                    <path d="M12 21V8" stroke-width="2"/>
+                                    <path d="M9 8l3-4 3 4" stroke-width="2"/>
+                                </svg>
+                                <span class="ml-2 text-xl font-bold text-gray-900 dark:text-white">FitFuel</span>
+                            </a>
+                        </div>
+                        <div class="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
+                            <a href="{{ url_for('dashboard') }}" class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Dashboard</a>
+                            <a href="{{ url_for('clients_list') }}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Clients</a>
+                            <a href="{{ url_for('meal_planner_wizard') }}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Meal Planner</a>
+                            <a href="{{ url_for('meal_substitutions') }}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Substitutions</a>
+                            <a href="{{ url_for('challenges') }}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Challenges</a>
+                        </div>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                        <!-- Dark Mode Toggle -->
+                        <button type="button" onclick="toggleDarkMode()" class="rounded-full p-1 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                            <span class="sr-only">Toggle dark mode</span>
+                            <svg id="dark-mode-icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                            <svg id="light-mode-icon" class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </button>
+                        <div class="relative ml-3">
+                            <div>
+                                <button type="button" class="flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                                    <span class="sr-only">Open user menu</span>
+                                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-500">
+                                        <span class="text-sm font-medium leading-none text-white">{{ current_user.username[0].upper() }}</span>
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="py-10">
+            <main>
+                <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="mb-4 rounded-md p-4 {% if category == 'error' %}bg-red-50 text-red-800{% else %}bg-green-50 text-green-800{% endif %}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+    {% else %}
+        {% block content_unauthenticated %}{% endblock %}
+    {% endif %}
+
+    <script>
+        // Dark mode functionality
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            updateDarkModeIcon();
+        }
+
+        function updateDarkModeIcon() {
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('dark-mode-icon').classList.toggle('hidden', isDark);
+            document.getElementById('light-mode-icon').classList.toggle('hidden', !isDark);
+        }
+
+        // Initialize dark mode from saved preference
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+        updateDarkModeIcon();
+
+        // Loading state management
+        window.showLoading = function() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        window.hideLoading = function() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // Add loading state to form submissions
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function() {
+                    showLoading();
+                });
+            });
         });
+
+        // Initialize any other features
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add any initialization code here
+        });
+
+        // Initialize Socket.IO
+        {% if current_user.is_authenticated %}
+        const socket = io();
+        socket.on('connect', () => {
+            console.log('Connected to WebSocket');
+            socket.emit('join', { user_id: '{{ current_user.id }}' });
+        });
+
+        socket.on('notification_{{ current_user.id }}', (notification) => {
+            showNotification(notification);
+        });
+
+        function showNotification(notification) {
+            const notificationElement = document.createElement('div');
+            notificationElement.className = 'notification bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 max-w-sm transform transition-all duration-300 translate-x-full';
+            notificationElement.innerHTML = `
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i data-feather="${getNotificationIcon(notification.type)}" class="h-6 w-6 text-indigo-600"></i>
+                    </div>
+                    <div class="ml-3 w-0 flex-1">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">${notification.message}</p>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">${formatTimestamp(notification.timestamp)}</p>
+                    </div>
+                    <div class="ml-4 flex-shrink-0 flex">
+                        <button class="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none">
+                            <i data-feather="x" class="h-5 w-5"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const notificationCenter = document.getElementById('notification-center');
+            notificationCenter.appendChild(notificationElement);
+
+            // Animate in
+            setTimeout(() => {
+                notificationElement.classList.remove('translate-x-full');
+            }, 100);
+
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                notificationElement.classList.add('translate-x-full');
+                setTimeout(() => {
+                    notificationElement.remove();
+                }, 300);
+            }, 5000);
+
+            // Initialize Feather icons for the new notification
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        }
+
+        function getNotificationIcon(type) {
+            const icons = {
+                'client_update': 'user',
+                'goal_achievement': 'award',
+                'progress_update': 'trending-up',
+                'default': 'bell'
+            };
+            return icons[type] || icons.default;
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString();
+        }
+        {% endif %}
     </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/js/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                        
+                        // Request notification permission
+                        if ('Notification' in window) {
+                            Notification.requestPermission();
+                        }
+                        
+                        // Register sync
+                        if ('sync' in registration) {
+                            registration.sync.register('sync-workout-logs');
+                        }
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        // Offline status handling
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        function updateOnlineStatus() {
+            const status = navigator.onLine ? 'online' : 'offline';
+            if (!navigator.onLine) {
+                showOfflineToast();
+            }
+        }
+
+        function showOfflineToast() {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg';
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="h-6 w-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <p>You are currently offline. Some features may be limited.</p>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+    </script>
+
+    <!-- App Scripts -->
+    <script src="/static/js/app.js"></script>
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>
